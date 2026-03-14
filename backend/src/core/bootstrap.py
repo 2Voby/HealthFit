@@ -150,6 +150,12 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Витривалість", ["goal_endurance"]),
         ],
     )
+    q_intro_text, _ = await create_question_with_answers(
+        text="Супер. Зараз ми підберемо персональний план і wellness kit під ваш ритм.",
+        question_type="text",
+        requires=False,
+        answers=[],
+    )
     q_context, q_context_answers = await create_question_with_answers(
         text="Де вам зручніше займатися?",
         question_type="singe_choise",
@@ -377,6 +383,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         q_age,
         q_gender,
         q_goal,
+        q_intro_text,
         q_context,
         q_equipment,
         q_time,
@@ -416,6 +423,13 @@ async def bootstrap_mock_data(settings: Settings) -> None:
     await FlowTransition.create(
         flow=flow,
         from_question=q_goal,
+        to_question=q_intro_text,
+        condition_type="always",
+        priority=10,
+    )
+    await FlowTransition.create(
+        flow=flow,
+        from_question=q_intro_text,
         to_question=q_context,
         condition_type="always",
         priority=10,

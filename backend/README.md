@@ -44,6 +44,7 @@ Additional CRUD:
 - `GET /v1/flows/{id}/history`
 - `GET /v1/flows/{id}/history/{revision}`
 - `POST /v1/flows/{id}/rollback/{revision}` (requires `edit_elements`)
+- Question types: `singe_choise | multiple_choise | manual_input | text` (`text` = informational screen without answers).
 
 Offer selection:
 - `POST /v1/offers/selection` with `{ "attributes": [1,2,3], "limit": 3 }`

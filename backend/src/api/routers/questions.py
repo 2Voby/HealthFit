@@ -44,10 +44,10 @@ def question_type_value(question_type: object) -> str:
 
 def validate_answers(question_type: object, answers: list[QuestionAnswerCreateRequest]) -> None:
     question_type_value_str = question_type_value(question_type)
-    if question_type_value_str == QuestionType.manual_input.value and answers:
+    if question_type_value_str in {QuestionType.manual_input.value, QuestionType.text.value} and answers:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="manual_input question must not contain predefined answers",
+            detail=f"{question_type_value_str} question must not contain predefined answers",
         )
 
 
@@ -121,6 +121,11 @@ async def create_question(
     current_user: User = Depends(require_authority("edit_elements")),
 ) -> QuestionResponse:
     validate_answers(payload.type, payload.answers)
+    if payload.type == QuestionType.text and payload.requires:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="text question must have requires=false",
+        )
 
     question = await Question.create(
         text=payload.text,
@@ -144,10 +149,17 @@ async def update_question(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question not found")
 
     effective_type = payload.type.value if payload.type is not None else question_type_value(question.type)
+    effective_requires = payload.requires if payload.requires is not None else question.requires
     should_replace_answers = payload.answers is not None
     answers_to_save = payload.answers if payload.answers is not None else []
 
-    if effective_type == QuestionType.manual_input.value:
+    if effective_type == QuestionType.text.value and effective_requires:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="text question must have requires=false",
+        )
+
+    if effective_type in {QuestionType.manual_input.value, QuestionType.text.value}:
         should_replace_answers = True
         answers_to_save = payload.answers if payload.answers is not None else []
         validate_answers(effective_type, answers_to_save)
