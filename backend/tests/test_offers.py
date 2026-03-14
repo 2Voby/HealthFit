@@ -47,6 +47,15 @@ def test_offer_crud_and_selection_engine(admin_client) -> None:
     )
     assert excluded_offer_response.status_code == 201, excluded_offer_response.text
 
+    selection_without_optional_response = admin_client.post(
+        "/v1/offers/selection",
+        json={"attributes": [attr_goal, attr_home]},
+    )
+    assert selection_without_optional_response.status_code == 200, selection_without_optional_response.text
+    items_without_optional = selection_without_optional_response.json()["items"]
+    names_without_optional = [item["offer"]["name"] for item in items_without_optional]
+    assert primary_name in names_without_optional
+
     selection_response = admin_client.post(
         "/v1/offers/selection",
         json={"attributes": [attr_goal, attr_home, attr_time]},
@@ -66,3 +75,27 @@ def test_offer_crud_and_selection_engine(admin_client) -> None:
     filtered_offer_names = [item["offer"]["name"] for item in filtered_items]
     assert primary_name in filtered_offer_names
     assert excluded_name not in filtered_offer_names
+
+    primary_item = next(item for item in selection_items if item["offer"]["name"] == primary_name)
+    assert primary_item["matched_optional_count"] == 1
+    assert primary_item["total_optional_count"] == 1
+    assert primary_item["optional_coverage"] == 1.0
+
+
+def test_offer_constraints_conflict_validation(admin_client) -> None:
+    suffix = uuid4().hex[:8]
+    attr_goal = create_attribute(admin_client, f"goal_conflict_{suffix}")
+
+    conflict_response = admin_client.post(
+        "/v1/offers/",
+        json={
+            "name": f"Conflict Offer {suffix}",
+            "description": "invalid",
+            "price": 10.0,
+            "requires_all": [attr_goal],
+            "requires_optional": [],
+            "excludes": [attr_goal],
+            "priority": 1,
+        },
+    )
+    assert conflict_response.status_code == 400, conflict_response.text

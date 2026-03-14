@@ -74,6 +74,8 @@ class OfferSelectionItem(BaseModel):
     matched_optional_count: int
     total_optional_count: int
     matched_optional_ids: list[int]
+    missing_optional_ids: list[int]
+    optional_coverage: float
     missing_requires_all_ids: list[int]
     hit_excluded_ids: list[int]
     reasoning: list[str]

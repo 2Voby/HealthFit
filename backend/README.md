@@ -63,7 +63,7 @@ Additional CRUD:
 
 Offer selection:
 - `POST /v1/offers/selection` with `{ "attributes": [1,2,3], "limit": 3 }`
-- Filters by `requires_all` and `excludes`, ranks by `priority` + matched `requires_optional`.
+ - Filters by `requires_all` and `excludes`, then ranks by `priority` + `requires_optional` coverage/specificity.
 
 Active flow:
 - `GET /v1/flows/active` returns only active flow with ordered questions and answers.
