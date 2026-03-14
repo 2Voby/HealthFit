@@ -42,7 +42,7 @@ export function AppLayout() {
         <div className="p-2">
           {user && (
             <p className="mb-2 truncate px-3 text-xs text-muted-foreground">
-              {user.email}
+              {user.login}
             </p>
           )}
           <Button

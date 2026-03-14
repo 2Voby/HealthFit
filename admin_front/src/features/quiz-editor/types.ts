@@ -2,12 +2,11 @@ import type { Node, Edge, Viewport } from '@xyflow/react'
 
 export type QuestionType = 'single_choice' | 'multi_choice' | 'input_number' | 'input_text'
 
-export type FlowTransitionConditionType = 'always' | 'answer_any' | 'answer_all'
-
 export interface Answer {
   id: string
   text: string
   attributes: number[]
+  backendId?: number
 }
 
 export interface QuestionNodeData {
@@ -17,6 +16,7 @@ export interface QuestionNodeData {
   questionType: QuestionType
   requires: boolean
   answers: Answer[]
+  backendQuestionId?: number
 }
 
 export interface InfoPageNodeData {
@@ -41,9 +41,6 @@ export type QuizNodeData = QuestionNodeData | InfoPageNodeData | OfferNodeData
 export type NodeKind = QuizNodeData['kind']
 
 export interface TransitionEdgeData {
-  conditionType: FlowTransitionConditionType
-  answerIds: string[]
-  priority: number
   [key: string]: unknown
 }
 

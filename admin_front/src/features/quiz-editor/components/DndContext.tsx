@@ -2,7 +2,9 @@ import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent } from 
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { useEditorStore } from '../store/editor.store'
-import { useAttributesStore } from '../store/attributes.store'
+import { parseAttributeName } from '../store/attributes.store'
+import { useQueryClient } from '@tanstack/react-query'
+import type { AttributesListResponse } from '@/types/api'
 
 interface DragData {
   type: 'attribute'
@@ -25,12 +27,21 @@ type DropData = DropAnswerData | DropOfferZoneData
 
 export function DndContextWrapper({ children }: { children: React.ReactNode }) {
   const [activeAttribute, setActiveAttribute] = useState<{ id: number; name: string } | null>(null)
+  const qc = useQueryClient()
+
+  const getAttributeName = (id: number): string => {
+    // Read from the TanStack Query cache
+    const cached = qc.getQueryData<AttributesListResponse>(['attributes', 'list', { limit: 200 }])
+    const attr = cached?.items.find((a) => a.id === id)
+    if (!attr) return String(id)
+    const { key, value } = parseAttributeName(attr.name)
+    return `${key}: ${value}`
+  }
 
   const handleDragStart = (event: DragStartEvent) => {
     const data = event.active.data.current as DragData | undefined
     if (data?.type === 'attribute') {
-      const name = useAttributesStore.getState().getAttributeName(data.attributeId)
-      setActiveAttribute({ id: data.attributeId, name: name ?? '' })
+      setActiveAttribute({ id: data.attributeId, name: getAttributeName(data.attributeId) })
     }
   }
 

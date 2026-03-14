@@ -15,7 +15,6 @@ import type {
   QuizGraph,
   NodeKind,
   Answer,
-  TransitionEdgeData,
 } from '../types'
 import { NODE_KINDS } from '../constants'
 import { generateId } from '../utils/id'
@@ -41,7 +40,7 @@ interface EditorState {
   removeAnswer: (nodeId: string, answerId: string) => void
   updateAnswer: (nodeId: string, answerId: string, patch: Partial<Answer>) => void
 
-  updateEdgeData: (edgeId: string, data: Partial<TransitionEdgeData>) => void
+  updateEdgeData: (edgeId: string, data: Record<string, unknown>) => void
   removeEdge: (edgeId: string) => void
 
   setViewport: (viewport: Viewport) => void
@@ -93,7 +92,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
     set((s) => ({
       edges: addEdge(
-        { ...connection, type: 'conditional', data: { conditionType: 'always', answerIds: [], priority: 100 } },
+        { ...connection, type: 'conditional', data: {} },
         s.edges,
       ),
       isDirty: true,
@@ -195,7 +194,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   updateEdgeData: (edgeId, data) => {
     set((s) => ({
       edges: s.edges.map((e) =>
-        e.id === edgeId ? { ...e, data: { ...e.data, ...data } as TransitionEdgeData } : e,
+        e.id === edgeId ? { ...e, data: { ...e.data, ...data } } : e,
       ),
       isDirty: true,
     }))

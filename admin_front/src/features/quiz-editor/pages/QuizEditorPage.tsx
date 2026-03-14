@@ -7,14 +7,20 @@ import { TopBar } from '../components/TopBar'
 import { AttributesPanel } from '../components/AttributesPanel'
 import { DndContextWrapper } from '../components/DndContext'
 import { useFlowStore } from '../store/flow.store'
+import { useFlows } from '@/hooks/use-flows'
 
 export function QuizEditorPage() {
+  const activeFlowId = useFlowStore((s) => s.activeFlowId)
+  const selectFlow = useFlowStore((s) => s.selectFlow)
+  const { data: flowsData } = useFlows({ limit: 200 })
+
   useEffect(() => {
-    const { flows, selectFlow } = useFlowStore.getState()
-    if (flows.length > 0) {
-      selectFlow(flows[0].id)
-    }
-  }, [])
+    if (!flowsData || activeFlowId !== null) return
+    const flows = flowsData.items
+    if (flows.length === 0) return
+    const activeFlow = flows.find((f) => f.is_active) ?? flows[0]
+    selectFlow(activeFlow)
+  }, [flowsData, activeFlowId, selectFlow])
 
   return (
     <DndContextWrapper>

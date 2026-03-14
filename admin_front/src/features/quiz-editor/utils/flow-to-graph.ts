@@ -28,6 +28,7 @@ export function flowToGraph(flow: FlowResponse): QuizGraph & { quizId: string; q
         id: answerId,
         text: a.text,
         attributes: a.attributes,
+        backendId: a.id,
       }
     })
 
@@ -41,6 +42,7 @@ export function flowToGraph(flow: FlowResponse): QuizGraph & { quizId: string; q
         questionType: mapQuestionType(fq.question.type),
         requires: fq.question.requires,
         answers,
+        backendQuestionId: fq.question_id,
       },
     }
   })
@@ -62,13 +64,7 @@ export function flowToGraph(flow: FlowResponse): QuizGraph & { quizId: string; q
         sourceHandle: sourceHandleId,
         target: targetNodeId,
         type: 'conditional' as const,
-        data: {
-          conditionType: t.condition_type === 'always' ? 'always' as const
-            : t.condition_type === 'answer_all' ? 'answer_all' as const
-            : 'answer_any' as const,
-          answerIds: t.answer_ids.map((id) => answerIdMap.get(id) ?? '').filter(Boolean),
-          priority: t.priority,
-        },
+        data: {},
       }
     })
     .filter((e): e is NonNullable<typeof e> => e !== null) as QuizEdge[]

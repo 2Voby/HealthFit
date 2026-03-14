@@ -1,5 +1,5 @@
 import { HelpCircle, FileText, Gift, type LucideIcon } from 'lucide-react'
-import type { NodeKind, QuizNodeData, QuestionType, FlowTransitionConditionType } from './types'
+import type { NodeKind, QuizNodeData, QuestionType } from './types'
 import type { AttributeResponse, OfferResponse } from '@/types/api'
 
 interface NodeKindMeta {
@@ -59,12 +59,6 @@ export const QUESTION_TYPES: { value: QuestionType; label: string }[] = [
   { value: 'multi_choice', label: 'Multi Choice' },
   { value: 'input_number', label: 'Number Input' },
   { value: 'input_text', label: 'Text Input' },
-]
-
-export const TRANSITION_CONDITION_TYPES: { value: FlowTransitionConditionType; label: string }[] = [
-  { value: 'always', label: 'Always' },
-  { value: 'answer_any', label: 'Any answer' },
-  { value: 'answer_all', label: 'All answers' },
 ]
 
 const ts = '2025-01-01T00:00:00Z'
