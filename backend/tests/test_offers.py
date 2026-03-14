@@ -90,3 +90,50 @@ def test_offer_constraints_conflict_validation(admin_client) -> None:
         },
     )
     assert create_response.status_code == 400, create_response.text
+
+
+def test_default_offers_returned_when_no_eligible_match(admin_client) -> None:
+    suffix = uuid4().hex[:8]
+    attr_required = create_attribute(admin_client, f"required_only_{suffix}")
+
+    create_default_response = admin_client.post(
+        "/v1/offers/",
+        json={
+            "name": f"Default Offer {suffix}",
+            "description": "fallback",
+            "price": 20.0,
+            "default": True,
+            "requires_all": [attr_required],
+            "requires_optional": [],
+            "excludes": [],
+            "priority": 7,
+        },
+    )
+    assert create_default_response.status_code == 201, create_default_response.text
+    assert create_default_response.json()["default"] is True
+
+    create_regular_response = admin_client.post(
+        "/v1/offers/",
+        json={
+            "name": f"Regular Offer {suffix}",
+            "description": "regular",
+            "price": 30.0,
+            "default": False,
+            "requires_all": [attr_required],
+            "requires_optional": [],
+            "excludes": [],
+            "priority": 9,
+        },
+    )
+    assert create_regular_response.status_code == 201, create_regular_response.text
+
+    selection_response = admin_client.post(
+        "/v1/offers/selection",
+        json={"attributes": []},
+    )
+    assert selection_response.status_code == 200, selection_response.text
+    body = selection_response.json()
+    names = [item["offer"]["name"] for item in body["items"]]
+    assert f"Default Offer {suffix}" in names
+    assert f"Regular Offer {suffix}" not in names
+    assert body["total_eligible"] == 0
