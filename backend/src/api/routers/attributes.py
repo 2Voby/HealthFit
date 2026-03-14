@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src.api.deps import require_authority
+from src.core.flow_history import create_flow_history_for_all_flows
 from src.models import Attribute, User
 from src.schemas.attribute import (
     AttributeCreateRequest,
@@ -47,7 +48,7 @@ async def get_attribute(
 @router.post("/", response_model=AttributeResponse, status_code=status.HTTP_201_CREATED)
 async def create_attribute(
     payload: AttributeCreateRequest,
-    _: User = Depends(require_authority("edit_elements")),
+    current_user: User = Depends(require_authority("edit_elements")),
 ) -> AttributeResponse:
     existing = await Attribute.get_or_none(name=payload.name)
     if existing:
@@ -57,6 +58,7 @@ async def create_attribute(
         )
 
     attribute = await Attribute.create(name=payload.name)
+    await create_flow_history_for_all_flows(changed_by_user=current_user)
     return to_attribute_response(attribute)
 
 
@@ -64,7 +66,7 @@ async def create_attribute(
 async def update_attribute(
     attribute_id: int,
     payload: AttributeUpdateRequest,
-    _: User = Depends(require_authority("edit_elements")),
+    current_user: User = Depends(require_authority("edit_elements")),
 ) -> AttributeResponse:
     attribute = await Attribute.get_or_none(id=attribute_id)
     if attribute is None:
@@ -80,15 +82,17 @@ async def update_attribute(
         attribute.name = payload.name
 
     await attribute.save()
+    await create_flow_history_for_all_flows(changed_by_user=current_user)
     return to_attribute_response(attribute)
 
 
 @router.delete("/{attribute_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_attribute(
     attribute_id: int,
-    _: User = Depends(require_authority("edit_elements")),
+    current_user: User = Depends(require_authority("edit_elements")),
 ) -> None:
     attribute = await Attribute.get_or_none(id=attribute_id)
     if attribute is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attribute not found")
     await attribute.delete()
+    await create_flow_history_for_all_flows(changed_by_user=current_user)

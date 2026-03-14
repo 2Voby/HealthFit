@@ -90,3 +90,35 @@ class FlowTransitionAnswer(Model):
     class Meta:
         table = "app_flow_transition_answers"
         unique_together = (("transition", "answer"),)
+
+
+class FlowHistoryAction(str, Enum):
+    create = "create"
+    update = "update"
+    rollback = "rollback"
+    dependency_update = "dependency_update"
+
+
+class FlowHistory(Model):
+    id = fields.IntField(pk=True)
+    flow = fields.ForeignKeyField(
+        "models.Flow",
+        related_name="history",
+        on_delete=fields.CASCADE,
+    )
+    revision = fields.IntField()
+    action = fields.CharEnumField(FlowHistoryAction, max_length=32)
+    snapshot = fields.JSONField()
+    source_revision = fields.IntField(null=True)
+    changed_by_user = fields.ForeignKeyField(
+        "models.User",
+        related_name="flow_changes",
+        null=True,
+        on_delete=fields.SET_NULL,
+    )
+    created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
+
+    class Meta:
+        table = "app_flow_history"
+        unique_together = (("flow", "revision"),)

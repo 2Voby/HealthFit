@@ -66,6 +66,37 @@ class FlowResolveNextResponse(BaseModel):
     next_question: QuestionResponse | None
 
 
+class FlowHistoryAction(str, Enum):
+    create = "create"
+    update = "update"
+    rollback = "rollback"
+    dependency_update = "dependency_update"
+
+
+class FlowSnapshot(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    is_active: bool
+    question_ids: list[int] = Field(default_factory=list)
+    transitions: list[FlowTransitionCreateRequest] = Field(default_factory=list)
+
+
+class FlowHistoryEntryResponse(BaseModel):
+    id: int
+    flow_id: int
+    revision: int
+    action: FlowHistoryAction
+    source_revision: int | None
+    changed_by_user_id: int | None
+    snapshot: FlowSnapshot
+    created_at: datetime
+    updated_at: datetime
+
+
+class FlowHistoryListResponse(BaseModel):
+    items: list[FlowHistoryEntryResponse]
+    total: int
+
+
 class FlowResponse(BaseModel):
     id: int
     name: str

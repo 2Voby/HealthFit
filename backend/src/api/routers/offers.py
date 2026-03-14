@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src.api.deps import require_authority
+from src.core.flow_history import create_flow_history_for_all_flows
 from src.models import Attribute, Offer, User
 from src.schemas.offer import (
     OfferCreateRequest,
@@ -159,7 +160,7 @@ async def select_offers(payload: OfferSelectionRequest) -> OfferSelectionRespons
 @router.post("/", response_model=OfferResponse, status_code=status.HTTP_201_CREATED)
 async def create_offer(
     payload: OfferCreateRequest,
-    _: User = Depends(require_authority("edit_elements")),
+    current_user: User = Depends(require_authority("edit_elements")),
 ) -> OfferResponse:
     existing = await Offer.get_or_none(name=payload.name)
     if existing:
@@ -186,6 +187,7 @@ async def create_offer(
     if excludes_attributes:
         await offer.excludes.add(*excludes_attributes)
 
+    await create_flow_history_for_all_flows(changed_by_user=current_user)
     return await to_offer_response(offer)
 
 
@@ -193,7 +195,7 @@ async def create_offer(
 async def update_offer(
     offer_id: int,
     payload: OfferUpdateRequest,
-    _: User = Depends(require_authority("edit_elements")),
+    current_user: User = Depends(require_authority("edit_elements")),
 ) -> OfferResponse:
     offer = await Offer.get_or_none(id=offer_id)
     if offer is None:
@@ -235,15 +237,17 @@ async def update_offer(
         if excludes_attributes:
             await offer.excludes.add(*excludes_attributes)
 
+    await create_flow_history_for_all_flows(changed_by_user=current_user)
     return await to_offer_response(offer)
 
 
 @router.delete("/{offer_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_offer(
     offer_id: int,
-    _: User = Depends(require_authority("edit_elements")),
+    current_user: User = Depends(require_authority("edit_elements")),
 ) -> None:
     offer = await Offer.get_or_none(id=offer_id)
     if offer is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Offer not found")
     await offer.delete()
+    await create_flow_history_for_all_flows(changed_by_user=current_user)

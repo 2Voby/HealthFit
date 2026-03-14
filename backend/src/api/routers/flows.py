@@ -1,13 +1,26 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src.api.deps import require_authority
-from src.models import Flow, FlowQuestion, FlowTransition, FlowTransitionAnswer, Question, QuestionAnswer, User
+from src.models import (
+    Flow,
+    FlowHistory,
+    FlowQuestion,
+    FlowTransition,
+    FlowTransitionAnswer,
+    Question,
+    QuestionAnswer,
+    User,
+)
 from src.schemas.flow import (
     FlowCreateRequest,
+    FlowHistoryAction,
+    FlowHistoryEntryResponse,
+    FlowHistoryListResponse,
     FlowQuestionResponse,
     FlowResolveNextRequest,
     FlowResolveNextResponse,
     FlowResponse,
+    FlowSnapshot,
     FlowTransitionCondition,
     FlowTransitionCreateRequest,
     FlowTransitionResponse,
@@ -29,6 +42,12 @@ def transition_condition_value(condition_type: object) -> str:
     if hasattr(condition_type, "value"):
         return str(getattr(condition_type, "value"))
     return str(condition_type)
+
+
+def flow_history_action_value(action: object) -> str:
+    if hasattr(action, "value"):
+        return str(getattr(action, "value"))
+    return str(action)
 
 
 async def to_question_response(question: Question) -> QuestionResponse:
@@ -197,6 +216,81 @@ async def set_flow_transitions(
 async def ensure_only_one_active(active_flow_id: int) -> None:
     await Flow.all().update(is_active=False)
     await Flow.filter(id=active_flow_id).update(is_active=True)
+
+
+async def to_flow_snapshot(flow: Flow) -> FlowSnapshot:
+    flow_questions = await FlowQuestion.filter(flow=flow).order_by("position")
+    question_ids = [item.question_id for item in flow_questions]
+
+    transitions = await FlowTransition.filter(flow=flow).order_by("from_question_id", "priority", "id")
+    transition_ids = [transition.id for transition in transitions]
+    answer_rows = []
+    if transition_ids:
+        answer_rows = await FlowTransitionAnswer.filter(transition_id__in=transition_ids).order_by(
+            "transition_id",
+            "answer_id",
+        )
+
+    transition_answers_map: dict[int, list[int]] = {}
+    for row in answer_rows:
+        transition_answers_map.setdefault(row.transition_id, []).append(row.answer_id)
+
+    transition_payloads = []
+    for transition in transitions:
+        transition_payloads.append(
+            FlowTransitionCreateRequest(
+                from_question_id=transition.from_question_id,
+                to_question_id=transition.to_question_id,
+                condition_type=transition_condition_value(transition.condition_type),
+                answer_ids=transition_answers_map.get(transition.id, []),
+                priority=transition.priority,
+            )
+        )
+
+    return FlowSnapshot(
+        name=flow.name,
+        is_active=flow.is_active,
+        question_ids=question_ids,
+        transitions=transition_payloads,
+    )
+
+
+async def get_next_flow_revision(flow_id: int) -> int:
+    latest_history_entry = await FlowHistory.filter(flow_id=flow_id).order_by("-revision").first()
+    if latest_history_entry is None:
+        return 1
+    return latest_history_entry.revision + 1
+
+
+async def create_flow_history_entry(
+    flow: Flow,
+    action: FlowHistoryAction,
+    changed_by_user: User | None,
+    source_revision: int | None = None,
+) -> FlowHistory:
+    snapshot = await to_flow_snapshot(flow)
+    return await FlowHistory.create(
+        flow=flow,
+        revision=await get_next_flow_revision(flow.id),
+        action=action.value,
+        snapshot=snapshot.model_dump(mode="json"),
+        source_revision=source_revision,
+        changed_by_user=changed_by_user,
+    )
+
+
+async def to_flow_history_entry_response(entry: FlowHistory) -> FlowHistoryEntryResponse:
+    return FlowHistoryEntryResponse(
+        id=entry.id,
+        flow_id=entry.flow_id,
+        revision=entry.revision,
+        action=flow_history_action_value(entry.action),
+        source_revision=entry.source_revision,
+        changed_by_user_id=entry.changed_by_user_id,
+        snapshot=FlowSnapshot.model_validate(entry.snapshot),
+        created_at=entry.created_at,
+        updated_at=entry.updated_at,
+    )
 
 
 def transition_matches(
@@ -371,6 +465,36 @@ async def get_flow(flow_id: int) -> FlowResponse:
     return await to_flow_response(flow)
 
 
+@router.get("/{flow_id}/history", response_model=FlowHistoryListResponse)
+async def list_flow_history(
+    flow_id: int,
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+) -> FlowHistoryListResponse:
+    flow = await Flow.get_or_none(id=flow_id)
+    if flow is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flow not found")
+
+    total = await FlowHistory.filter(flow=flow).count()
+    history_items = await FlowHistory.filter(flow=flow).order_by("-revision").offset(offset).limit(limit)
+    return FlowHistoryListResponse(
+        items=[await to_flow_history_entry_response(item) for item in history_items],
+        total=total,
+    )
+
+
+@router.get("/{flow_id}/history/{revision}", response_model=FlowHistoryEntryResponse)
+async def get_flow_history_entry(flow_id: int, revision: int) -> FlowHistoryEntryResponse:
+    flow = await Flow.get_or_none(id=flow_id)
+    if flow is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flow not found")
+
+    history_entry = await FlowHistory.filter(flow=flow, revision=revision).first()
+    if history_entry is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flow history entry not found")
+    return await to_flow_history_entry_response(history_entry)
+
+
 @router.post("/active/next", response_model=FlowResolveNextResponse)
 async def resolve_active_flow_next(payload: FlowResolveNextRequest) -> FlowResolveNextResponse:
     flow = await Flow.filter(is_active=True).first()
@@ -387,10 +511,56 @@ async def resolve_flow_next(flow_id: int, payload: FlowResolveNextRequest) -> Fl
     return await resolve_next_for_flow(flow=flow, payload=payload)
 
 
+@router.post("/{flow_id}/rollback/{revision}", response_model=FlowResponse)
+async def rollback_flow_to_revision(
+    flow_id: int,
+    revision: int,
+    current_user: User = Depends(require_authority("edit_elements")),
+) -> FlowResponse:
+    flow = await Flow.get_or_none(id=flow_id)
+    if flow is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flow not found")
+
+    history_entry = await FlowHistory.filter(flow=flow, revision=revision).first()
+    if history_entry is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flow history entry not found")
+
+    snapshot = FlowSnapshot.model_validate(history_entry.snapshot)
+    if snapshot.name != flow.name:
+        conflict = await Flow.get_or_none(name=snapshot.name)
+        if conflict and conflict.id != flow.id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Cannot rollback flow name due to existing flow with this name",
+            )
+
+    question_map = await resolve_questions_by_ids(snapshot.question_ids)
+
+    flow.name = snapshot.name
+    flow.is_active = snapshot.is_active
+    await flow.save()
+
+    await set_flow_questions(flow=flow, question_ids=snapshot.question_ids, question_map=question_map)
+    await set_flow_transitions(flow=flow, transitions=snapshot.transitions, question_map=question_map)
+
+    if flow.is_active:
+        await ensure_only_one_active(flow.id)
+        flow.is_active = True
+
+    await flow.fetch_from_db()
+    await create_flow_history_entry(
+        flow=flow,
+        action=FlowHistoryAction.rollback,
+        changed_by_user=current_user,
+        source_revision=history_entry.revision,
+    )
+    return await to_flow_response(flow)
+
+
 @router.post("/", response_model=FlowResponse, status_code=status.HTTP_201_CREATED)
 async def create_flow(
     payload: FlowCreateRequest,
-    _: User = Depends(require_authority("edit_elements")),
+    current_user: User = Depends(require_authority("edit_elements")),
 ) -> FlowResponse:
     existing = await Flow.get_or_none(name=payload.name)
     if existing:
@@ -411,6 +581,12 @@ async def create_flow(
     if flow.is_active:
         await ensure_only_one_active(flow.id)
 
+    await flow.fetch_from_db()
+    await create_flow_history_entry(
+        flow=flow,
+        action=FlowHistoryAction.create,
+        changed_by_user=current_user,
+    )
     return await to_flow_response(flow)
 
 
@@ -418,7 +594,7 @@ async def create_flow(
 async def update_flow(
     flow_id: int,
     payload: FlowUpdateRequest,
-    _: User = Depends(require_authority("edit_elements")),
+    current_user: User = Depends(require_authority("edit_elements")),
 ) -> FlowResponse:
     flow = await Flow.get_or_none(id=flow_id)
     if flow is None:
@@ -455,6 +631,12 @@ async def update_flow(
         await ensure_only_one_active(flow.id)
         flow.is_active = True
 
+    await flow.fetch_from_db()
+    await create_flow_history_entry(
+        flow=flow,
+        action=FlowHistoryAction.update,
+        changed_by_user=current_user,
+    )
     return await to_flow_response(flow)
 
 

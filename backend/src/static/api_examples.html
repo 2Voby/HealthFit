@@ -329,6 +329,20 @@
             <input id="flowId" type="number" value="1">
           </div>
         </div>
+        <div class="row three">
+          <div>
+            <label for="flowHistoryLimit">history limit</label>
+            <input id="flowHistoryLimit" type="number" value="20">
+          </div>
+          <div>
+            <label for="flowHistoryOffset">history offset</label>
+            <input id="flowHistoryOffset" type="number" value="0">
+          </div>
+          <div>
+            <label for="flowRevision">revision</label>
+            <input id="flowRevision" type="number" value="1">
+          </div>
+        </div>
         <div>
           <label for="flowBody">Body JSON (POST/PATCH)</label>
           <textarea id="flowBody">{
@@ -356,6 +370,8 @@
           <button id="btnFlowList" class="secondary">GET list</button>
           <button id="btnFlowGet" class="secondary">GET by id</button>
           <button id="btnFlowGetActive" class="secondary">GET active</button>
+          <button id="btnFlowHistoryList" class="secondary">GET history</button>
+          <button id="btnFlowHistoryGet" class="secondary">GET revision</button>
           <button id="btnFlowCreate">POST</button>
           <button id="btnFlowPatch">PATCH</button>
           <button id="btnFlowDelete" class="danger">DELETE</button>
@@ -363,8 +379,9 @@
         <div class="actions">
           <button id="btnFlowNextActive">POST active/next</button>
           <button id="btnFlowNextById">POST by id/next</button>
+          <button id="btnFlowRollback" class="danger">POST rollback</button>
         </div>
-        <p class="note">condition_type enum: <code>always | answer_any | answer_all</code>. Для <code>always</code> масив <code>answer_ids</code> має бути пустим.</p>
+        <p class="note">condition_type enum: <code>always | answer_any | answer_all</code>. Для <code>always</code> масив <code>answer_ids</code> має бути пустим. Create/update/rollback flow пише revision; зміни в attributes/questions/offers теж пишуть <code>dependency_update</code>. Rollback вимагає <code>edit_elements</code>.</p>
       </section>
 
       <section class="card">
@@ -530,11 +547,14 @@
     bind("btnFlowList", () => send("GET", `/flows/?offset=${val("flowOffset")}&limit=${val("flowLimit")}`));
     bind("btnFlowGet", () => send("GET", `/flows/${val("flowId")}`));
     bind("btnFlowGetActive", () => send("GET", "/flows/active"));
+    bind("btnFlowHistoryList", () => send("GET", `/flows/${val("flowId")}/history?offset=${val("flowHistoryOffset")}&limit=${val("flowHistoryLimit")}`));
+    bind("btnFlowHistoryGet", () => send("GET", `/flows/${val("flowId")}/history/${val("flowRevision")}`));
     bind("btnFlowCreate", () => send("POST", "/flows/", parseJson(val("flowBody"))));
     bind("btnFlowPatch", () => send("PATCH", `/flows/${val("flowId")}`, parseJson(val("flowBody"))));
     bind("btnFlowDelete", () => send("DELETE", `/flows/${val("flowId")}`));
     bind("btnFlowNextActive", () => send("POST", "/flows/active/next", parseJson(val("flowNextBody"))));
     bind("btnFlowNextById", () => send("POST", `/flows/${val("flowId")}/next`, parseJson(val("flowNextBody"))));
+    bind("btnFlowRollback", () => send("POST", `/flows/${val("flowId")}/rollback/${val("flowRevision")}`));
 
     bind("btnUserList", () => send("GET", `/users/?offset=${val("userOffset")}&limit=${val("userLimit")}`));
     bind("btnUserGet", () => send("GET", `/users/${val("userId")}`));

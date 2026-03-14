@@ -31,8 +31,8 @@ Swagger UI:
 - `edit_elements`
 
 Access rules:
-- All `GET` endpoints for `users`, `attributes`, `questions`, `offers` are public (no auth).
-- All `POST`, `PATCH`, `DELETE` endpoints for `users`, `attributes`, `questions`, `offers` require `edit_elements`.
+- All `GET` endpoints for `users`, `attributes`, `questions`, `offers`, `flows` are public (no auth).
+- All `POST`, `PATCH`, `DELETE` endpoints for `users`, `attributes`, `questions`, `offers`, `flows` require `edit_elements`.
 - Exceptions (public, no auth): `POST /v1/offers/selection`, `POST /v1/flows/active/next`, `POST /v1/flows/{id}/next`.
 
 Additional CRUD:
@@ -40,6 +40,9 @@ Additional CRUD:
 - `GET/POST/PATCH/DELETE /v1/questions`
 - `GET/POST/PATCH/DELETE /v1/offers`
 - `GET/POST/PATCH/DELETE /v1/flows`
+- `GET /v1/flows/{id}/history`
+- `GET /v1/flows/{id}/history/{revision}`
+- `POST /v1/flows/{id}/rollback/{revision}` (requires `edit_elements`)
 
 Offer selection:
 - `POST /v1/offers/selection` with `{ "attributes": [1,2,3], "limit": 3 }`
@@ -63,6 +66,10 @@ Active flow:
     - `{ "current_question_id": 2, "selected_answer_ids": [11] }`
   - Response:
     - `matched_transition_id`, `next_question_id`, `is_finished`, `next_question`
+- Flow history and rollback:
+  - Every `create/update/rollback` of flow writes a snapshot revision to flow history.
+  - Every `POST/PATCH/DELETE` in `attributes/questions/offers` also writes `dependency_update` revision for all flows.
+  - Rollback endpoint restores flow name, `is_active`, ordered `question_ids`, and `transitions` from selected revision.
 
 ## Bootstrap
 On startup app creates authorities from `BOOTSTRAP_AUTHORITIES_CSV`.

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src.api.deps import require_authority
+from src.core.flow_history import create_flow_history_for_all_flows
 from src.models import Attribute, Question, QuestionAnswer, User
 from src.schemas.question import (
     QuestionAnswerCreateRequest,
@@ -117,7 +118,7 @@ async def get_question(
 @router.post("/", response_model=QuestionResponse, status_code=status.HTTP_201_CREATED)
 async def create_question(
     payload: QuestionCreateRequest,
-    _: User = Depends(require_authority("edit_elements")),
+    current_user: User = Depends(require_authority("edit_elements")),
 ) -> QuestionResponse:
     validate_answers(payload.type, payload.answers)
 
@@ -127,6 +128,7 @@ async def create_question(
         requires=payload.requires,
     )
     await replace_question_answers(question, payload.answers)
+    await create_flow_history_for_all_flows(changed_by_user=current_user)
 
     return await to_question_response(question)
 
@@ -135,7 +137,7 @@ async def create_question(
 async def update_question(
     question_id: int,
     payload: QuestionUpdateRequest,
-    _: User = Depends(require_authority("edit_elements")),
+    current_user: User = Depends(require_authority("edit_elements")),
 ) -> QuestionResponse:
     question = await Question.get_or_none(id=question_id)
     if question is None:
@@ -162,15 +164,17 @@ async def update_question(
     if should_replace_answers:
         await replace_question_answers(question, answers_to_save)
 
+    await create_flow_history_for_all_flows(changed_by_user=current_user)
     return await to_question_response(question)
 
 
 @router.delete("/{question_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_question(
     question_id: int,
-    _: User = Depends(require_authority("edit_elements")),
+    current_user: User = Depends(require_authority("edit_elements")),
 ) -> None:
     question = await Question.get_or_none(id=question_id)
     if question is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question not found")
     await question.delete()
+    await create_flow_history_for_all_flows(changed_by_user=current_user)
