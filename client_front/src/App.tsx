@@ -1,21 +1,17 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-
-function HomePage() {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-      <h1 className="text-4xl font-bold">Vaca</h1>
-      <Button>Get started</Button>
-    </div>
-  )
-}
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import MainPage from "@/pages/MainPage/MainPage";
+import QuizPage from "@/pages/QuizPage/QuizPage";
+import ResultPage from "@/pages/ResultPage/ResultPage";
 
 export default function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-      </Routes>
-    </BrowserRouter>
-  )
+	return (
+		<BrowserRouter>
+			<Routes>
+				<Route path="/" element={<MainPage />} />
+				<Route path="/quiz" element={<QuizPage />} />
+				<Route path="/result" element={<ResultPage />} />
+			</Routes>
+		</BrowserRouter>
+	);
 }
