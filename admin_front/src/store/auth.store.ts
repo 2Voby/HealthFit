@@ -1,9 +1,9 @@
 import { create } from 'zustand'
-import type { User } from '@/types'
+import type { UserResponse } from '@/types/api'
 
 interface AuthState {
-  user: User | null
-  setUser: (user: User) => void
+  user: UserResponse | null
+  setUser: (user: UserResponse) => void
   clearUser: () => void
 }
 

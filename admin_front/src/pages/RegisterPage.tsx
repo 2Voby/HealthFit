@@ -1,4 +1,6 @@
+import { useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,16 +13,36 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { useAuthStore } from '@/store/auth.store'
+import { useRegister } from '@/hooks/use-auth'
 
 export function RegisterPage() {
   const navigate = useNavigate()
-  const setUser = useAuthStore((s) => s.setUser)
+  const registerMutation = useRegister()
+  const loginRef = useRef<HTMLInputElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
+  const confirmRef = useRef<HTMLInputElement>(null)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setUser({ id: '1', email: 'admin@betterme.world', name: 'Admin' })
-    navigate('/')
+    const login = loginRef.current?.value ?? ''
+    const password = passwordRef.current?.value ?? ''
+    const confirm = confirmRef.current?.value ?? ''
+    if (password !== confirm) {
+      toast.error('Passwords do not match')
+      return
+    }
+    registerMutation.mutate(
+      { login, password },
+      {
+        onSuccess: () => {
+          toast.success('Registered! Please log in.')
+          navigate('/login')
+        },
+        onError: (err) => {
+          toast.error(err.message || 'Registration failed')
+        },
+      },
+    )
   }
 
   return (
@@ -33,23 +55,19 @@ export function RegisterPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Ім'я</Label>
-              <Input id="name" placeholder="Ваше ім'я" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="you@example.com" />
+              <Label htmlFor="login">Логін</Label>
+              <Input id="login" type="text" placeholder="your_login" ref={loginRef} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Пароль</Label>
-              <Input id="password" type="password" placeholder="******" />
+              <Input id="password" type="password" placeholder="******" ref={passwordRef} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Підтвердіть пароль</Label>
-              <Input id="confirmPassword" type="password" placeholder="******" />
+              <Input id="confirmPassword" type="password" placeholder="******" ref={confirmRef} required />
             </div>
-            <Button type="submit" className="w-full">
-              Зареєструватися
+            <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
+              {registerMutation.isPending ? 'Реєстрація...' : 'Зареєструватися'}
             </Button>
           </form>
         </CardContent>

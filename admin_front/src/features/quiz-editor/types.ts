@@ -6,6 +6,7 @@ export interface Answer {
   id: string
   text: string
   attributes: number[]
+  backendId?: number
 }
 
 export interface QuestionNodeData {
@@ -15,6 +16,7 @@ export interface QuestionNodeData {
   questionType: QuestionType
   requires: boolean
   answers: Answer[]
+  backendQuestionId?: number
 }
 
 export interface InfoPageNodeData {

@@ -1,4 +1,6 @@
+import { useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,15 +14,31 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { useAuthStore } from '@/store/auth.store'
+import { useLogin } from '@/hooks/use-auth'
 
 export function LoginPage() {
   const navigate = useNavigate()
   const setUser = useAuthStore((s) => s.setUser)
+  const loginMutation = useLogin()
+  const loginRef = useRef<HTMLInputElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setUser({ id: '1', email: 'admin@betterme.world', name: 'Admin' })
-    navigate('/')
+    const login = loginRef.current?.value ?? ''
+    const password = passwordRef.current?.value ?? ''
+    loginMutation.mutate(
+      { login, password },
+      {
+        onSuccess: (user) => {
+          setUser(user)
+          navigate('/')
+        },
+        onError: (err) => {
+          toast.error(err.message || 'Login failed')
+        },
+      },
+    )
   }
 
   return (
@@ -33,15 +51,15 @@ export function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="you@example.com" />
+              <Label htmlFor="login">Логін</Label>
+              <Input id="login" type="text" placeholder="your_login" ref={loginRef} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Пароль</Label>
-              <Input id="password" type="password" placeholder="******" />
+              <Input id="password" type="password" placeholder="******" ref={passwordRef} required />
             </div>
-            <Button type="submit" className="w-full">
-              Увійти
+            <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
+              {loginMutation.isPending ? 'Вхід...' : 'Увійти'}
             </Button>
           </form>
         </CardContent>

@@ -28,6 +28,7 @@ export function flowToGraph(flow: FlowResponse): QuizGraph & { quizId: string; q
         id: answerId,
         text: a.text,
         attributes: a.attributes,
+        backendId: a.id,
       }
     })
 
@@ -41,6 +42,7 @@ export function flowToGraph(flow: FlowResponse): QuizGraph & { quizId: string; q
         questionType: mapQuestionType(fq.question.type),
         requires: fq.question.requires,
         answers,
+        backendQuestionId: fq.question_id,
       },
     }
   })

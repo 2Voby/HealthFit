@@ -15,7 +15,9 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useFlowStore } from '../store/flow.store'
+import { useFlowHistory, useRollbackFlow } from '@/hooks/use-flows'
 import type { FlowHistoryAction } from '@/types/api'
+import toast from 'react-hot-toast'
 
 const ACTION_COLORS: Record<FlowHistoryAction, string> = {
   create: 'bg-green-100 text-green-700',
@@ -33,14 +35,28 @@ const ACTION_LABELS: Record<FlowHistoryAction, string> = {
 
 export function FlowHistoryPanel() {
   const activeFlowId = useFlowStore((s) => s.activeFlowId)
-  const history = useFlowStore((s) => s.history)
-  const rollbackToRevision = useFlowStore((s) => s.rollbackToRevision)
-  const flow = useFlowStore((s) => s.flows.find((f) => f.id === s.activeFlowId))
-  const entries = activeFlowId ? (history[activeFlowId] ?? []) : []
+  const selectFlow = useFlowStore((s) => s.selectFlow)
+  const rollbackFlow = useRollbackFlow()
+
+  const { data: historyData } = useFlowHistory(activeFlowId, { limit: 50 })
+  const entries = historyData?.items ?? []
   const sortedEntries = [...entries].sort((a, b) => b.revision - a.revision)
   const latestRevision = sortedEntries.length > 0 ? sortedEntries[0].revision : 0
 
   if (!activeFlowId) return null
+
+  const handleRollback = (revision: number) => {
+    rollbackFlow.mutate(
+      { flowId: activeFlowId, revision },
+      {
+        onSuccess: (updatedFlow) => {
+          selectFlow(updatedFlow)
+          toast.success(`Rolled back to revision ${revision}`)
+        },
+        onError: (err) => toast.error(err.message || 'Rollback failed'),
+      },
+    )
+  }
 
   return (
     <Dialog>
@@ -57,7 +73,7 @@ export function FlowHistoryPanel() {
 
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>History — {flow?.name ?? 'Flow'}</DialogTitle>
+          <DialogTitle>History</DialogTitle>
         </DialogHeader>
 
         <ScrollArea className="max-h-[60vh]">
@@ -112,7 +128,8 @@ export function FlowHistoryPanel() {
                     variant="outline"
                     size="sm"
                     className="h-7 text-xs gap-1 shrink-0"
-                    onClick={() => rollbackToRevision(activeFlowId, entry.revision)}
+                    onClick={() => handleRollback(entry.revision)}
+                    disabled={rollbackFlow.isPending}
                   >
                     <RotateCcw className="h-3 w-3" />
                     Rollback

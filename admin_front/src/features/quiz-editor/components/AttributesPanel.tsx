@@ -7,17 +7,16 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
-import { useAttributesStore } from '../store/attributes.store'
-import { parseAttributeName } from '../constants'
+import { parseAttributeName } from '../store/attributes.store'
+import { useAttributes, useCreateAttribute, useDeleteAttribute } from '@/hooks/use-attributes'
 import type { AttributeResponse } from '@/types/api'
 
-function DraggableAttributeValue({ attribute }: { attribute: AttributeResponse }) {
+function DraggableAttributeValue({ attribute, onRemove }: { attribute: AttributeResponse; onRemove: (id: number) => void }) {
   const { value } = parseAttributeName(attribute.name)
   const { attributes: dragAttrs, listeners, setNodeRef, isDragging } = useDraggable({
     id: `attr-${attribute.id}`,
     data: { type: 'attribute', attributeId: attribute.id },
   })
-  const removeAttribute = useAttributesStore((s) => s.removeAttribute)
 
   return (
     <div
@@ -38,7 +37,7 @@ function DraggableAttributeValue({ attribute }: { attribute: AttributeResponse }
         className="h-4 w-4 shrink-0 opacity-0 group-hover:opacity-100 hover:text-destructive"
         onClick={(e) => {
           e.stopPropagation()
-          removeAttribute(attribute.id)
+          onRemove(attribute.id)
         }}
       >
         <Trash2 className="h-2.5 w-2.5" />
@@ -47,25 +46,31 @@ function DraggableAttributeValue({ attribute }: { attribute: AttributeResponse }
   )
 }
 
-function AttributeGroup({ groupKey, items }: { groupKey: string; items: AttributeResponse[] }) {
+function AttributeGroup({
+  groupKey,
+  items,
+  onAddValue,
+  onRemove,
+}: {
+  groupKey: string
+  items: AttributeResponse[]
+  onAddValue: (key: string, value: string) => void
+  onRemove: (id: number) => void
+}) {
   const [expanded, setExpanded] = useState(true)
   const [addingValue, setAddingValue] = useState(false)
   const [newValue, setNewValue] = useState('')
-  const addValue = useAttributesStore((s) => s.addValue)
-  const removeAttribute = useAttributesStore((s) => s.removeAttribute)
 
   const handleAddValue = () => {
     if (newValue.trim()) {
-      addValue(groupKey, newValue.trim())
+      onAddValue(groupKey, newValue.trim())
       setNewValue('')
       setAddingValue(false)
     }
   }
 
   const handleRemoveGroup = () => {
-    for (const item of items) {
-      removeAttribute(item.id)
-    }
+    for (const item of items) onRemove(item.id)
   }
 
   return (
@@ -106,7 +111,7 @@ function AttributeGroup({ groupKey, items }: { groupKey: string; items: Attribut
       {expanded && (
         <div className="pl-3 space-y-0.5">
           {items.map((attr) => (
-            <DraggableAttributeValue key={attr.id} attribute={attr} />
+            <DraggableAttributeValue key={attr.id} attribute={attr} onRemove={onRemove} />
           ))}
           {addingValue && (
             <div className="flex items-center gap-1 px-1 py-0.5">
@@ -137,8 +142,11 @@ export function AttributesPanel() {
   const [addingKey, setAddingKey] = useState(false)
   const [newKey, setNewKey] = useState('')
   const [newFirstValue, setNewFirstValue] = useState('')
-  const attributes = useAttributesStore((s) => s.attributes)
-  const addValue = useAttributesStore((s) => s.addValue)
+
+  const { data: attributesData } = useAttributes({ limit: 200 })
+  const attributes = attributesData?.items ?? []
+  const createAttribute = useCreateAttribute()
+  const deleteAttribute = useDeleteAttribute()
 
   const grouped = useMemo(() => {
     const groups = new Map<string, AttributeResponse[]>()
@@ -151,9 +159,17 @@ export function AttributesPanel() {
     return groups
   }, [attributes])
 
+  const handleAddValue = (key: string, value: string) => {
+    createAttribute.mutate({ name: `${key}-${value}` })
+  }
+
+  const handleRemove = (id: number) => {
+    deleteAttribute.mutate(id)
+  }
+
   const handleAddKey = () => {
     if (newKey.trim() && newFirstValue.trim()) {
-      addValue(newKey.trim(), newFirstValue.trim())
+      createAttribute.mutate({ name: `${newKey.trim()}-${newFirstValue.trim()}` })
       setNewKey('')
       setNewFirstValue('')
       setAddingKey(false)
@@ -246,7 +262,13 @@ export function AttributesPanel() {
       <ScrollArea className="flex-1">
         <div className="p-1 space-y-1">
           {!collapsed && Array.from(grouped.entries()).map(([key, items]) => (
-            <AttributeGroup key={key} groupKey={key} items={items} />
+            <AttributeGroup
+              key={key}
+              groupKey={key}
+              items={items}
+              onAddValue={handleAddValue}
+              onRemove={handleRemove}
+            />
           ))}
           {collapsed && (
             <div className="flex flex-col items-center gap-1 pt-1">

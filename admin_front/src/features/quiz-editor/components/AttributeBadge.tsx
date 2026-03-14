@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { useAttributesStore } from '../store/attributes.store'
-import { parseAttributeName } from '../constants'
+import { parseAttributeName } from '../store/attributes.store'
+import { useAttributes } from '@/hooks/use-attributes'
 
 interface AttributeBadgeProps {
   attributeId: number
@@ -13,7 +13,8 @@ interface AttributeBadgeProps {
 }
 
 export function AttributeBadge({ attributeId, onRemove, className, showKey }: AttributeBadgeProps) {
-  const name = useAttributesStore((s) => s.attributes.find((a) => a.id === attributeId)?.name)
+  const { data: attributesData } = useAttributes({ limit: 200 })
+  const name = attributesData?.items.find((a) => a.id === attributeId)?.name
 
   const display = useMemo(
     () => (name ? parseAttributeName(name) : null),
