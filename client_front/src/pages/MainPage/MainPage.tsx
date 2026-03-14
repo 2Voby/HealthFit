@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { ROUTES } from "@/consts/routes";
 import { useNavigate } from "react-router-dom";
 import {
   Target, Salad, TrendingUp, Moon, Flame, Brain, Zap,
@@ -76,11 +77,10 @@ export default function MainPage() {
           </p>
         </div>
 
-        <Button
-          onClick={() => navigate("/quiz")}
-          className="w-full bg-[#1a7a4a] hover:bg-[#155f3a] active:scale-[0.98] text-white rounded-2xl py-4 h-auto text-[15px] font-bold shadow-none border-none transition-all tracking-wide">
-          Почати квіз →
-        </Button>
+				{/* CTA */}
+				<Button onClick={() => navigate(ROUTES.QUIZ)} className="w-full bg-[#1a7a4a] hover:bg-[#155f3a] active:scale-[0.98] text-white rounded-2xl py-4 h-auto text-[15px] font-bold shadow-none border-none transition-all tracking-wide">
+					Почати квіз →
+				</Button>
 
         <p className="text-center text-[11px] text-gray-400 mt-3 leading-relaxed px-2">
           Натискаючи кнопку, ви погоджуєтесь з{" "}

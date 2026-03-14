@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ROUTES } from "@/consts/routes";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { ChoiceQuestionStep } from "./components/ChoiceQuestionStep";
@@ -47,7 +48,7 @@ export default function QuizPage() {
 
 	function handleBack() {
 		if (stepIndex === 0) {
-			navigate("/");
+			navigate(ROUTES.MAIN);
 			return;
 		}
 		setInvalidQuestionId(null);
@@ -65,7 +66,7 @@ export default function QuizPage() {
 		}
 
 		if (isLastStep) {
-			navigate("/result");
+			navigate(ROUTES.RESULT);
 			return;
 		}
 		setStepIndex((prev) => prev + 1);
@@ -74,7 +75,7 @@ export default function QuizPage() {
 	if (!currentQuestion) {
 		return (
 			<div className="min-h-screen bg-[#f4faf6] text-[#173325]">
-				<QuizHeader stepIndex={0} totalSteps={1} onBack={() => navigate("/")} />
+				<QuizHeader stepIndex={0} totalSteps={1} onBack={() => navigate(ROUTES.MAIN)} />
 				<main className="mx-auto flex w-full max-w-[430px] flex-1 flex-col px-4 pt-6">
 					<div className="rounded-2xl border border-[#d7e9dd] bg-white p-5">
 						<h1 className="text-[24px] font-semibold">Немає доступних питань</h1>

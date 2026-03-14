@@ -21,25 +21,15 @@ export function NumberWheel({ value, min, max, unit, onChange }: NumberWheelProp
 		[min, max],
 	);
 	const scrollerRef = useRef<HTMLDivElement>(null);
-	const skipAlignRef = useRef(false);
 
 	useEffect(() => {
 		const node = scrollerRef.current;
 		if (!node) return;
-		node.scrollTop = (value - min) * WHEEL_ITEM_HEIGHT;
-	}, [min]);
-
-	useEffect(() => {
-		const node = scrollerRef.current;
-		if (!node) return;
-		if (skipAlignRef.current) {
-			skipAlignRef.current = false;
-			return;
-		}
 
 		const target = (value - min) * WHEEL_ITEM_HEIGHT;
-		if (Math.abs(node.scrollTop - target) < 2) return;
-		node.scrollTo({ top: target, behavior: "smooth" });
+		if (Math.abs(node.scrollTop - target) < 1) return;
+		// Keep wheel position deterministic to avoid value oscillation on click.
+		node.scrollTop = target;
 	}, [value, min]);
 
 	function handleScroll() {
@@ -51,7 +41,6 @@ export function NumberWheel({ value, min, max, unit, onChange }: NumberWheelProp
 		const next = clamp(min + index, min, max);
 		if (next === value) return;
 
-		skipAlignRef.current = true;
 		onChange(next);
 	}
 
@@ -102,7 +91,7 @@ export function NumberWheel({ value, min, max, unit, onChange }: NumberWheelProp
 				<div className="flex flex-col gap-2">
 					<button
 						type="button"
-						onClick={() => onChange(clamp(value + 1, min, max))}
+						onClick={() => onChange(clamp(value - 1, min, max))}
 						disabled={value >= max}
 						className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#cfe3d7] bg-[#f3fbf6] text-[#256f4b] disabled:opacity-40"
 					>
@@ -110,7 +99,7 @@ export function NumberWheel({ value, min, max, unit, onChange }: NumberWheelProp
 					</button>
 					<button
 						type="button"
-						onClick={() => onChange(clamp(value - 1, min, max))}
+						onClick={() => onChange(clamp(value + 1, min, max))}
 						disabled={value <= min}
 						className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#cfe3d7] bg-[#f3fbf6] text-[#256f4b] disabled:opacity-40"
 					>
