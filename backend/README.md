@@ -16,11 +16,11 @@ docker compose up --build
 
 ## Tests
 ```bash
-docker compose run --rm tests
+docker compose --profile test run --rm tests
 ```
 or full test flow with dependencies:
 ```bash
-docker compose up --build tests
+docker compose --profile test up --build tests
 ```
 Test suites cover:
 - auth + users

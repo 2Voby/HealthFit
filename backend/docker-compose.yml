@@ -22,16 +22,19 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: users_tests
+    profiles: ["test"]
     env_file:
       - .env
     environment:
       BOOTSTRAP_MOCK_DATA: "false"
       PYTHONPATH: /app
+      POSTGRES_HOST: postgres_test
+      REDIS_HOST: redis_test
     working_dir: /app
     depends_on:
-      postgres:
+      postgres_test:
         condition: service_healthy
-      redis:
+      redis_test:
         condition: service_healthy
     volumes:
       - ./:/app
@@ -69,6 +72,42 @@ services:
       retries: 10
     restart: unless-stopped
 
+  postgres_test:
+    image: postgres:16-alpine
+    container_name: users_postgres_test
+    profiles: ["test"]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
+    ports:
+      - "15439:5432"
+    volumes:
+      - pg_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-app}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis_test:
+    image: redis:7-alpine
+    container_name: users_redis_test
+    profiles: ["test"]
+    ports:
+      - "16381:6379"
+    volumes:
+      - redis_test_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
 volumes:
   pg_data:
   redis_data:
+  pg_test_data:
+  redis_test_data:
