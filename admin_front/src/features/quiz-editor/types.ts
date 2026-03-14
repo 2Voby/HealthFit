@@ -2,10 +2,12 @@ import type { Node, Edge, Viewport } from '@xyflow/react'
 
 export type QuestionType = 'single_choice' | 'multi_choice' | 'input_number' | 'input_text'
 
+export type FlowTransitionConditionType = 'always' | 'answer_any' | 'answer_all'
+
 export interface Answer {
   id: string
   text: string
-  value: string
+  attributes: number[]
 }
 
 export interface QuestionNodeData {
@@ -13,7 +15,7 @@ export interface QuestionNodeData {
   kind: 'question'
   text: string
   questionType: QuestionType
-  attribute: string
+  requires: boolean
   answers: Answer[]
 }
 
@@ -29,27 +31,24 @@ export interface OfferNodeData {
   kind: 'offer'
   offerId: string
   label: string
+  requires_all: number[]
+  requires_optional: number[]
+  excludes: number[]
 }
 
 export type QuizNodeData = QuestionNodeData | InfoPageNodeData | OfferNodeData
 
 export type NodeKind = QuizNodeData['kind']
 
-export type ConditionOperator = 'eq' | 'neq' | 'gt' | 'lt' | 'in' | 'contains'
-
-export interface EdgeCondition {
-  attribute: string
-  operator: ConditionOperator
-  value: string | number | string[]
-}
-
-export interface ConditionalEdgeData {
-  conditions: EdgeCondition[]
+export interface TransitionEdgeData {
+  conditionType: FlowTransitionConditionType
+  answerIds: string[]
+  priority: number
   [key: string]: unknown
 }
 
 export type QuizNode = Node<QuizNodeData>
-export type QuizEdge = Edge<ConditionalEdgeData>
+export type QuizEdge = Edge<TransitionEdgeData>
 
 export interface QuizGraph {
   nodes: QuizNode[]

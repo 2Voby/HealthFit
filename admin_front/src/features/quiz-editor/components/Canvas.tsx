@@ -49,6 +49,13 @@ export function Canvas() {
   const isValidConnection: IsValidConnection = useCallback(
     (connection) => {
       if (connection.source === connection.target) return false
+      // Only one outgoing edge per answer handle
+      if (connection.sourceHandle) {
+        const hasExisting = edges.some(
+          (e) => e.source === connection.source && e.sourceHandle === connection.sourceHandle,
+        )
+        if (hasExisting) return false
+      }
       return !hasCycle(edges, {
         source: connection.source,
         target: connection.target,

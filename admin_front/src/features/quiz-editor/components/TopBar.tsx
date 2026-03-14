@@ -4,12 +4,20 @@ import { LayoutDashboard, Save, MoreHorizontal, Download, Copy, Trash2 } from 'l
 import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Tooltip,
   TooltipContent,
@@ -19,6 +27,8 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { useEditorStore } from '../store/editor.store'
+import { useFlowStore } from '../store/flow.store'
+import { FlowHistoryPanel } from './FlowHistoryPanel'
 
 export function TopBar() {
   const quizName = useEditorStore((s) => s.quizName)
@@ -26,6 +36,10 @@ export function TopBar() {
   const setQuizName = useEditorStore((s) => s.setQuizName)
   const autoLayout = useEditorStore((s) => s.autoLayout)
   const serializeGraph = useEditorStore((s) => s.serializeGraph)
+
+  const flows = useFlowStore((s) => s.flows)
+  const activeFlowId = useFlowStore((s) => s.activeFlowId)
+  const selectFlow = useFlowStore((s) => s.selectFlow)
 
   const { fitView } = useReactFlow()
   const [editingName, setEditingName] = useState(false)
@@ -49,9 +63,49 @@ export function TopBar() {
     toast.success('Exported JSON')
   }
 
+  const handleFlowChange = (flowId: string) => {
+    if (isDirty) {
+      if (!window.confirm('You have unsaved changes. Switch flow anyway?')) return
+    }
+    selectFlow(Number(flowId))
+  }
+
   return (
     <TooltipProvider delayDuration={300}>
       <div className="flex h-12 items-center border-b bg-background px-3 gap-2">
+        {/* Branding */}
+        <span className="text-sm font-bold tracking-tight text-primary shrink-0">
+          BebraMe
+        </span>
+
+        <Separator orientation="vertical" className="h-6" />
+
+        {/* Flow selector */}
+        <Select
+          value={activeFlowId ? String(activeFlowId) : undefined}
+          onValueChange={handleFlowChange}
+        >
+          <SelectTrigger className="h-8 w-48 text-xs shrink-0">
+            <SelectValue placeholder="Select flow..." />
+          </SelectTrigger>
+          <SelectContent>
+            {flows.map((f) => (
+              <SelectItem key={f.id} value={String(f.id)}>
+                <span className="flex items-center gap-2">
+                  {f.name}
+                  {f.is_active && (
+                    <Badge variant="secondary" className="text-[9px] h-4 px-1 bg-green-100 text-green-700">
+                      Active
+                    </Badge>
+                  )}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Separator orientation="vertical" className="h-6" />
+
         {/* Quiz name */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {editingName ? (
@@ -86,6 +140,8 @@ export function TopBar() {
 
         {/* Actions */}
         <div className="flex items-center gap-1">
+          <FlowHistoryPanel />
+
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { autoLayout(); requestAnimationFrame(() => fitView({ duration: 300 })) }}>
