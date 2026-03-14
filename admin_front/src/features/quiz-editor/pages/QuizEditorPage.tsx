@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Canvas } from '../components/Canvas'
 import { NodePalette } from '../components/NodePalette'
 import { TopBar } from '../components/TopBar'
@@ -18,7 +19,9 @@ export function QuizEditorPage() {
         <div className="flex flex-1 overflow-hidden">
           <NodePalette />
           <div className="flex-1">
-            <Canvas />
+            <ErrorBoundary>
+              <Canvas />
+            </ErrorBoundary>
           </div>
         </div>
       </div>
