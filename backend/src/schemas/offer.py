@@ -12,6 +12,11 @@ class OfferCreateRequest(BaseModel):
         serialization_alias="description",
     )
     price: float = Field(ge=0)
+    default: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("default", "is_default"),
+        serialization_alias="default",
+    )
     requires_all: list[int] = Field(default_factory=list)
     requires_optional: list[int] = Field(default_factory=list)
     excludes: list[int] = Field(
@@ -31,6 +36,11 @@ class OfferUpdateRequest(BaseModel):
         serialization_alias="description",
     )
     price: float | None = Field(default=None, ge=0)
+    default: bool | None = Field(
+        default=None,
+        validation_alias=AliasChoices("default", "is_default"),
+        serialization_alias="default",
+    )
     requires_all: list[int] | None = None
     requires_optional: list[int] | None = None
     excludes: list[int] | None = Field(
@@ -46,6 +56,7 @@ class OfferResponse(BaseModel):
     name: str
     description: str
     price: float
+    default: bool
     requires_all: list[int]
     requires_optional: list[int]
     excludes: list[int]
@@ -65,7 +76,6 @@ class OfferSelectionRequest(BaseModel):
         validation_alias=AliasChoices("attributes", "attribute_ids"),
         serialization_alias="attributes",
     )
-    limit: int = Field(default=3, ge=1, le=50)
 
 
 class OfferSelectionItem(BaseModel):
@@ -74,6 +84,8 @@ class OfferSelectionItem(BaseModel):
     matched_optional_count: int
     total_optional_count: int
     matched_optional_ids: list[int]
+    missing_optional_ids: list[int]
+    optional_coverage: float
     missing_requires_all_ids: list[int]
     hit_excluded_ids: list[int]
     reasoning: list[str]

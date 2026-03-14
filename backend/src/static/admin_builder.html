@@ -378,6 +378,7 @@
             <option value="singe_choise">singe_choise</option>
             <option value="multiple_choise">multiple_choise</option>
             <option value="manual_input">manual_input</option>
+            <option value="text">text (info screen)</option>
           </select>
         </div>
       </div>
@@ -768,7 +769,7 @@
     const host = byId("answersEditor");
     const rows = host.querySelectorAll(".ans-row");
     if (!rows.length) {
-      host.innerHTML = '<div class="tiny">No answers. Add rows, or keep empty for manual_input.</div>';
+      host.innerHTML = '<div class="tiny">No answers. Keep empty for manual_input or text info screen.</div>';
       return;
     }
     rows.forEach((row, idx) => {
@@ -811,6 +812,18 @@
         attributes: parseCsvIds(row.querySelector(".ans-attrs").value)
       }))
       .filter(answer => answer.text.length > 0);
+  }
+
+  function buildQuestionPayloadFromForm() {
+    const type = byId("qType").value;
+    const requires = byId("qRequires").checked;
+    const answers = collectAnswersFromEditor();
+    return {
+      text: byId("qText").value.trim(),
+      type,
+      requires: type === "text" ? false : requires,
+      answers: (type === "manual_input" || type === "text") ? [] : answers
+    };
   }
 
   function clearQuestionForm() {
@@ -1178,26 +1191,22 @@
     });
 
     byId("btnAddAnswerRow").addEventListener("click", () => newAnswerRow());
+    byId("qType").addEventListener("change", () => {
+      const type = byId("qType").value;
+      if (type === "text") {
+        byId("qRequires").checked = false;
+      }
+    });
     byId("btnReloadQuestions").addEventListener("click", () => safeRun("reload questions", reloadQuestions));
     byId("btnQuestionCreate").addEventListener("click", () => safeRun("create question", async () => {
-      const payload = {
-        text: byId("qText").value.trim(),
-        type: byId("qType").value,
-        requires: byId("qRequires").checked,
-        answers: collectAnswersFromEditor()
-      };
+      const payload = buildQuestionPayloadFromForm();
       await api("POST", "/questions/", payload);
       clearQuestionForm();
       await Promise.all([reloadQuestions(), reloadFlows()]);
     }));
     byId("btnQuestionUpdate").addEventListener("click", () => safeRun("update question", async () => {
       const id = Number(byId("qId").value);
-      const payload = {
-        text: byId("qText").value.trim(),
-        type: byId("qType").value,
-        requires: byId("qRequires").checked,
-        answers: collectAnswersFromEditor()
-      };
+      const payload = buildQuestionPayloadFromForm();
       await api("PATCH", `/questions/${id}`, payload);
       await Promise.all([reloadQuestions(), reloadFlows()]);
     }));

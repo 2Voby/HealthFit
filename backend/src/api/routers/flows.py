@@ -327,10 +327,10 @@ async def resolve_next_for_flow(
         )
 
     current_question_type = question_type_value(current_question.type)
-    if current_question_type == "manual_input" and selected_answer_ids:
+    if current_question_type in {"manual_input", "text"} and selected_answer_ids:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="manual_input question must not contain selected_answer_ids",
+            detail=f"{current_question_type} question must not contain selected_answer_ids",
         )
     if current_question_type == "singe_choise" and len(selected_answer_ids) > 1:
         raise HTTPException(
@@ -547,7 +547,7 @@ async def rollback_flow_to_revision(
         await ensure_only_one_active(flow.id)
         flow.is_active = True
 
-    await flow.fetch_from_db()
+    await flow.refresh_from_db()
     await create_flow_history_entry(
         flow=flow,
         action=FlowHistoryAction.rollback,
@@ -581,7 +581,7 @@ async def create_flow(
     if flow.is_active:
         await ensure_only_one_active(flow.id)
 
-    await flow.fetch_from_db()
+    await flow.refresh_from_db()
     await create_flow_history_entry(
         flow=flow,
         action=FlowHistoryAction.create,
@@ -631,7 +631,7 @@ async def update_flow(
         await ensure_only_one_active(flow.id)
         flow.is_active = True
 
-    await flow.fetch_from_db()
+    await flow.refresh_from_db()
     await create_flow_history_entry(
         flow=flow,
         action=FlowHistoryAction.update,

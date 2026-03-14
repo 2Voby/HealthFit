@@ -33,7 +33,7 @@ app = FastAPI(
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=".*",
+    allow_origins=["http://localhost:5173", "https://healthfit.artemka1806.dev"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

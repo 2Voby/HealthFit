@@ -8,6 +8,7 @@ class QuestionType(str, Enum):
     singe_choise = "singe_choise"
     multiple_choise = "multiple_choise"
     manual_input = "manual_input"
+    text = "text"
 
 
 class QuestionAnswerCreateRequest(BaseModel):

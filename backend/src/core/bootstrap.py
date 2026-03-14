@@ -51,10 +51,21 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         "context_outdoor",
         "time_10_15",
         "time_20_30",
+        "time_30_45",
         "injury_knee_or_back",
         "injury_none",
-        "stress_high",
         "stress_low",
+        "stress_medium",
+        "stress_high",
+        "level_beginner",
+        "level_intermediate",
+        "level_advanced",
+        "preference_strength",
+        "preference_running",
+        "preference_yoga",
+        "preference_mobility",
+        "preference_low_impact",
+        "preference_short_sessions",
     ]
     attributes_by_name: dict[str, Attribute] = {}
     for name in attribute_names:
@@ -108,19 +119,43 @@ async def bootstrap_mock_data(settings: Settings) -> None:
     q_time, _ = await create_question_with_answers(
         text="Скільки часу на день?",
         question_type="singe_choise",
-        requires=False,
+        requires=True,
         answers=[
-            ("10–15 хв", ["time_10_15"]),
+            ("10–15 хв", ["time_10_15", "preference_short_sessions"]),
             ("20–30 хв", ["time_20_30"]),
+            ("30–45 хв", ["time_30_45", "level_intermediate"]),
         ],
     )
     q_injury, _ = await create_question_with_answers(
         text="Чи є травми?",
         question_type="singe_choise",
-        requires=False,
+        requires=True,
         answers=[
             ("Коліна/спина", ["injury_knee_or_back"]),
             ("Немає", ["injury_none"]),
+        ],
+    )
+    q_level, _ = await create_question_with_answers(
+        text="Ваш рівень підготовки?",
+        question_type="singe_choise",
+        requires=True,
+        answers=[
+            ("Beginner", ["level_beginner"]),
+            ("Intermediate", ["level_intermediate"]),
+            ("Advanced", ["level_advanced"]),
+        ],
+    )
+    q_preferences, _ = await create_question_with_answers(
+        text="Який формат вам ближчий?",
+        question_type="multiple_choise",
+        requires=False,
+        answers=[
+            ("Силові тренування", ["preference_strength"]),
+            ("Біг", ["preference_running"]),
+            ("Йога", ["preference_yoga"]),
+            ("Мобільність/розтяжка", ["preference_mobility"]),
+            ("Low-impact тренування", ["preference_low_impact"]),
+            ("Короткі сесії", ["preference_short_sessions"]),
         ],
     )
     q_stress, _ = await create_question_with_answers(
@@ -128,9 +163,16 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="singe_choise",
         requires=True,
         answers=[
-            ("Високий", ["stress_high"]),
             ("Низький", ["stress_low"]),
+            ("Середній", ["stress_medium"]),
+            ("Високий", ["stress_high"]),
         ],
+    )
+    q_final_text, _ = await create_question_with_answers(
+        text="Ви за один крок до успху. Натисніть далі, щоб побачити персональний офер.",
+        question_type="text",
+        requires=False,
+        answers=[],
     )
 
     async def create_offer(
@@ -138,6 +180,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         description: str,
         price: float,
         priority: int,
+        default: bool,
         requires_all: list[str],
         requires_optional: list[str],
         excludes: list[str],
@@ -146,6 +189,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             name=name,
             description=description,
             price=price,
+            is_default=default,
             priority=priority,
         )
         if requires_all:
@@ -157,66 +201,101 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         return offer
 
     await create_offer(
-        name="Weight Loss Starter (Home)",
-        description="4-тижневий план схуднення вдома (20–30 хв) + Home Fat-Burn Kit.",
+        name="Weight Loss Starter (Home) — 4 тижні",
+        description=(
+            "Digital: план схуднення вдома (20–30 хв)\n"
+            "Physical wellness kit: Home Fat-Burn Kit (resistance bands, скакалка, "
+            "шейкер/пляшка, електроліти + healthy snack)"
+        ),
         price=49.99,
         priority=90,
+        default=False,
         requires_all=["goal_weight_loss", "context_home", "time_20_30"],
-        requires_optional=[],
+        requires_optional=["level_beginner", "preference_short_sessions"],
         excludes=[],
     )
     await create_offer(
-        name="Lean Strength Builder (Gym)",
-        description="Силова програма для залу + Gym Support Kit.",
+        name="Lean Strength Builder (Gym) — силові + прогресія",
+        description=(
+            "Digital: програма для залу\n"
+            "Physical wellness kit: Gym Support Kit (wrist wraps/straps, mini loop band, "
+            "компактний рушник, електроліти/протеїн-снек)"
+        ),
         price=59.99,
         priority=88,
+        default=False,
         requires_all=["goal_strength", "context_gym", "injury_none"],
-        requires_optional=[],
+        requires_optional=["level_intermediate", "level_advanced", "preference_strength"],
         excludes=["injury_knee_or_back"],
     )
     await create_offer(
-        name="Low-Impact Fat Burn",
-        description="Суглобо-friendly план + Joint-Friendly Kit.",
+        name="Low-Impact Fat Burn — “суглоби friendly”",
+        description=(
+            "Digital: low-impact план (коліна/спина friendly)\n"
+            "Physical wellness kit: Joint-Friendly Kit (knee sleeve/бандаж, massage ball, "
+            "mini loop bands, cooling patch/recovery gel)"
+        ),
         price=54.99,
         priority=86,
+        default=False,
         requires_all=["goal_strength", "context_gym", "injury_knee_or_back"],
-        requires_optional=[],
+        requires_optional=["preference_low_impact", "preference_mobility"],
         excludes=[],
     )
     await create_offer(
-        name="Run Your First 5K (Outdoor)",
-        description="Бігова програма 3x/тиж + Runner Starter Kit.",
+        name="Run Your First 5K (Outdoor) — бігова програма",
+        description=(
+            "Digital: підготовка до 5K (3 рази/тиж)\n"
+            "Physical wellness kit: Runner Starter Kit (electrolytes, reflective armband/safety light, "
+            "blister kit, running belt)"
+        ),
         price=44.99,
         priority=84,
-        requires_all=["goal_endurance", "context_outdoor"],
-        requires_optional=[],
-        excludes=[],
+        default=False,
+        requires_all=["goal_endurance", "context_outdoor", "injury_none"],
+        requires_optional=["preference_running", "level_beginner"],
+        excludes=["injury_knee_or_back"],
     )
     await create_offer(
-        name="Yoga & Mobility (Home)",
-        description="Йога/мобільність 10–25 хв + Mobility Kit.",
+        name="Yoga & Mobility (Home) — гнучкість + спина/постава",
+        description=(
+            "Digital: йога/мобільність 10–25 хв\n"
+            "Physical wellness kit: Mobility Kit (travel yoga mat або yoga strap, massage ball, "
+            "mini foam roller)"
+        ),
         price=39.99,
         priority=82,
+        default=False,
         requires_all=["goal_flexibility", "context_home"],
-        requires_optional=[],
+        requires_optional=["preference_yoga", "preference_mobility"],
         excludes=[],
     )
     await create_offer(
-        name="Stress Reset Program",
-        description="Ментальний ресет + Calm-Now Kit.",
+        name="Stress Reset Program — ментальний ресет + мікрозвички",
+        description=(
+            "Digital: дихання/медитації/антистрес рутини\n"
+            "Physical wellness kit: Calm-Now Kit (eye mask, aroma roll-on/mini candle, tea sticks, "
+            "stress ball/fidget, quick reset card)"
+        ),
         price=29.99,
         priority=70,
+        default=True,
         requires_all=["stress_high"],
-        requires_optional=["goal_stress"],
+        requires_optional=["goal_stress", "preference_yoga"],
         excludes=[],
     )
     await create_offer(
-        name="Quick Fit Micro-Workouts",
-        description="Щоденні 10–15 хв тренування + Micro-Workout Kit.",
+        name="Quick Fit Micro-Workouts — 10–15 хв щодня",
+        description=(
+            "Digital: короткі щоденні тренування\n"
+            "Physical wellness kit: Micro-Workout Kit (slider discs, mini loop bands, "
+            "шейкер/пляшка, mini routine card)"
+        ),
         price=34.99,
         priority=95,
+        default=False,
         requires_all=["goal_weight_loss", "context_home", "time_10_15"],
-        requires_optional=[],
+        requires_optional=["preference_short_sessions", "level_beginner"],
         excludes=[],
     )
 
@@ -224,7 +303,16 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         name="Default Wellness Flow",
         is_active=True,
     )
-    ordered_questions = [q_goal, q_context, q_time, q_injury, q_stress]
+    ordered_questions = [
+        q_goal,
+        q_context,
+        q_time,
+        q_injury,
+        q_stress,
+        q_level,
+        q_preferences,
+        q_final_text,
+    ]
     for position, question in enumerate(ordered_questions, start=1):
         await FlowQuestion.create(
             flow=flow,
@@ -261,28 +349,47 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         priority=20,
     )
     await FlowTransitionAnswer.create(transition=transition_context_to_injury, answer=context_gym_answer)
-
-    transition_context_to_stress = await FlowTransition.create(
-        flow=flow,
-        from_question=q_context,
-        to_question=q_stress,
-        condition_type="answer_any",
-        priority=30,
-    )
-    await FlowTransitionAnswer.create(transition=transition_context_to_stress, answer=context_outdoor_answer)
+    await FlowTransitionAnswer.create(transition=transition_context_to_injury, answer=context_outdoor_answer)
 
     await FlowTransition.create(
         flow=flow,
         from_question=q_time,
-        to_question=q_stress,
+        to_question=q_injury,
         condition_type="always",
         priority=10,
     )
-
     await FlowTransition.create(
         flow=flow,
         from_question=q_injury,
         to_question=q_stress,
+        condition_type="always",
+        priority=10,
+    )
+    await FlowTransition.create(
+        flow=flow,
+        from_question=q_stress,
+        to_question=q_level,
+        condition_type="always",
+        priority=10,
+    )
+    await FlowTransition.create(
+        flow=flow,
+        from_question=q_level,
+        to_question=q_preferences,
+        condition_type="always",
+        priority=10,
+    )
+    await FlowTransition.create(
+        flow=flow,
+        from_question=q_preferences,
+        to_question=q_final_text,
+        condition_type="always",
+        priority=10,
+    )
+    await FlowTransition.create(
+        flow=flow,
+        from_question=q_final_text,
+        to_question=None,
         condition_type="always",
         priority=10,
     )
