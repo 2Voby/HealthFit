@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 // ── Quiz data ──────────────────────────────────────────────
@@ -134,6 +135,7 @@ function OptionRow({
 
 // ── Main component ─────────────────────────────────────────
 export default function QuizPage() {
+	const navigate = useNavigate();
 	const [step, setStep] = useState(0);
 	const [answers, setAnswers] = useState<Answers>({});
 	const [done, setDone] = useState(false);
@@ -177,7 +179,10 @@ export default function QuizPage() {
 				<p className="text-[15px] text-gray-500 leading-relaxed mb-8 max-w-xs">
 					На основі твоїх відповідей ми підібрали персональну програму тренувань.
 				</p>
-				<Button className="w-full max-w-xs bg-[#1a7a4a] hover:bg-[#155f3a] text-white rounded-2xl py-4 h-auto text-[15px] font-bold shadow-none border-none">
+				<Button
+					onClick={() => navigate("/result")}
+					className="w-full max-w-xs bg-[#1a7a4a] hover:bg-[#155f3a] text-white rounded-2xl py-4 h-auto text-[15px] font-bold shadow-none border-none"
+				>
 					Переглянути план →
 				</Button>
 			</div>
