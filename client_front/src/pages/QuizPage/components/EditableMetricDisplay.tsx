@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { clamp } from "../utils";
+import { clamp } from "@/utils/index";
 
 interface EditableMetricDisplayProps {
 	value: number;

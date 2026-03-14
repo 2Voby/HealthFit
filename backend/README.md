@@ -14,6 +14,21 @@ cp .env.example .env
 docker compose up --build
 ```
 
+## Tests
+```bash
+docker compose --profile test run --rm tests
+```
+or full test flow with dependencies:
+```bash
+docker compose --profile test up --build tests
+```
+Test suites cover:
+- auth + users
+- attributes + questions (including `text` question type validation)
+- offers + selection engine
+- flows (branching, active flow logic, history, rollback, dependency updates)
+- core security password hashing/verification
+
 Swagger UI:
 - http://localhost:8000/docs
 - Health check: `GET /v1/health`
@@ -44,6 +59,7 @@ Additional CRUD:
 - `GET /v1/flows/{id}/history`
 - `GET /v1/flows/{id}/history/{revision}`
 - `POST /v1/flows/{id}/rollback/{revision}` (requires `edit_elements`)
+- Question types: `singe_choise | multiple_choise | manual_input | text` (`text` = informational screen without answers).
 
 Offer selection:
 - `POST /v1/offers/selection` with `{ "attributes": [1,2,3], "limit": 3 }`

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { clamp } from "../utils";
+import { clamp } from "@/utils/index";
 
 const WHEEL_ITEM_HEIGHT = 52;
 const WHEEL_VISIBLE_ITEMS = 5;
