@@ -14,6 +14,21 @@ cp .env.example .env
 docker compose up --build
 ```
 
+## Tests
+```bash
+docker compose run --rm tests
+```
+or full test flow with dependencies:
+```bash
+docker compose up --build tests
+```
+Test suites cover:
+- auth + users
+- attributes + questions (including `text` question type validation)
+- offers + selection engine
+- flows (branching, active flow logic, history, rollback, dependency updates)
+- core security password hashing/verification
+
 Swagger UI:
 - http://localhost:8000/docs
 - Health check: `GET /v1/health`

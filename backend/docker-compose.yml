@@ -17,6 +17,26 @@ services:
       - ./src:/app/src
     restart: unless-stopped
 
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: users_tests
+    env_file:
+      - .env
+    environment:
+      BOOTSTRAP_MOCK_DATA: "false"
+      PYTHONPATH: /app
+    working_dir: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+    command: ["pytest", "-q", "tests"]
+
   postgres:
     image: postgres:16-alpine
     container_name: users_postgres

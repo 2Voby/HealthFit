@@ -547,7 +547,7 @@ async def rollback_flow_to_revision(
         await ensure_only_one_active(flow.id)
         flow.is_active = True
 
-    await flow.fetch_from_db()
+    await flow.refresh_from_db()
     await create_flow_history_entry(
         flow=flow,
         action=FlowHistoryAction.rollback,
@@ -581,7 +581,7 @@ async def create_flow(
     if flow.is_active:
         await ensure_only_one_active(flow.id)
 
-    await flow.fetch_from_db()
+    await flow.refresh_from_db()
     await create_flow_history_entry(
         flow=flow,
         action=FlowHistoryAction.create,
@@ -631,7 +631,7 @@ async def update_flow(
         await ensure_only_one_active(flow.id)
         flow.is_active = True
 
-    await flow.fetch_from_db()
+    await flow.refresh_from_db()
     await create_flow_history_entry(
         flow=flow,
         action=FlowHistoryAction.update,
