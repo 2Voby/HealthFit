@@ -21,6 +21,16 @@ from src.schemas.flow import (
     FlowsListResponse,
     FlowUpdateRequest,
 )
+from src.schemas.flow_session import (
+    FlowSessionAdvanceResponse,
+    FlowSessionAnswerResponse,
+    FlowSessionAttributeSource,
+    FlowSessionCreateRequest,
+    FlowSessionDerivedAttributeResponse,
+    FlowSessionNextRequest,
+    FlowSessionResponse,
+    FlowSessionStatus,
+)
 from src.schemas.offer import (
     OfferCreateRequest,
     OfferResponse,
@@ -55,6 +65,14 @@ __all__ = [
     "FlowResolveNextResponse",
     "FlowResponse",
     "FlowSnapshot",
+    "FlowSessionAdvanceResponse",
+    "FlowSessionAnswerResponse",
+    "FlowSessionAttributeSource",
+    "FlowSessionCreateRequest",
+    "FlowSessionDerivedAttributeResponse",
+    "FlowSessionNextRequest",
+    "FlowSessionResponse",
+    "FlowSessionStatus",
     "FlowTransitionCondition",
     "FlowTransitionCreateRequest",
     "FlowTransitionResponse",
