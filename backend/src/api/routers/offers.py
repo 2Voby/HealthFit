@@ -29,15 +29,14 @@ def normalize_offer_constraints(
     normalized_requires_optional = normalize_unique_ids(requires_optional_ids)
     normalized_excludes = normalize_unique_ids(excludes_ids)
 
-    # If attr is already in requires_all, keeping it in optional is redundant.
+    # requires_optional should not duplicate requires_all.
     requires_all_set = set(normalized_requires_all)
     normalized_requires_optional = [
         attr_id for attr_id in normalized_requires_optional if attr_id not in requires_all_set
     ]
 
     conflict_ids = sorted(
-        (set(normalized_requires_all) | set(normalized_requires_optional))
-        & set(normalized_excludes)
+        (set(normalized_requires_all) | set(normalized_requires_optional)) & set(normalized_excludes)
     )
     if conflict_ids:
         raise HTTPException(
@@ -118,12 +117,13 @@ async def build_offer_selection_item(
 
     # Ranking formula:
     # 1) priority (dominant business signal)
-    # 2) optional coverage (how complete recommendation is)
-    # 3) specificity (more constrained offer gets slight boost)
-    specificity_bonus = len(requires_all_ids) * 500 + total_optional_count * 120
-    coverage_bonus = int(optional_coverage * 10_000)
-    matched_bonus = matched_optional_count * 250
-    score = offer.priority * 1_000_000 + coverage_bonus + specificity_bonus + matched_bonus
+    # 2) optional coverage / matched optional
+    # 3) specificity (more constrained offer is usually more relevant)
+    specificity_bonus = len(requires_all_ids) * 2_000 + total_optional_count * 350
+    optional_bonus = matched_optional_count * 1_000 + int(optional_coverage * 600)
+    full_optional_bonus = 250 if total_optional_count > 0 and matched_optional_count == total_optional_count else 0
+    generic_penalty = -1_000 if len(requires_all_ids) == 0 and total_optional_count == 0 else 0
+    score = offer.priority * 1_000_000 + specificity_bonus + optional_bonus + full_optional_bonus + generic_penalty
 
     reasoning = [
         f"requires_all matched: {len(requires_all_ids) - len(missing_requires_all_ids)}/{len(requires_all_ids)}",
