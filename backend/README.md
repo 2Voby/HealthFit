@@ -16,6 +16,7 @@ docker compose up --build
 
 Swagger UI:
 - http://localhost:8000/docs
+- Health check: `GET /v1/health`
 
 ## Auth flow
 1. `POST /v1/auth/register` or `POST /v1/auth/login`
