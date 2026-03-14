@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { ROUTES } from "@/consts/routes";
 import { useNavigate } from "react-router-dom";
 const stats = [
 	{ value: "12K+", label: "Активних користувачів" },
@@ -28,7 +29,7 @@ function PerkCard({ icon, text }: { icon: string; text: string }) {
 }
 
 export default function MainPage() {
-    const navigate= useNavigate();
+	const navigate = useNavigate();
 	const doubled = [...perks, ...perks];
 
 	return (
@@ -100,7 +101,7 @@ export default function MainPage() {
 				</div>
 
 				{/* CTA */}
-				<Button onClick={()=>{navigate('/quiz')}} className="w-full bg-[#1a7a4a] hover:bg-[#155f3a] active:scale-[0.98] text-white rounded-2xl py-4 h-auto text-[15px] font-bold shadow-none border-none transition-all tracking-wide">
+				<Button onClick={() => navigate(ROUTES.QUIZ)} className="w-full bg-[#1a7a4a] hover:bg-[#155f3a] active:scale-[0.98] text-white rounded-2xl py-4 h-auto text-[15px] font-bold shadow-none border-none transition-all tracking-wide">
 					Почати квіз →
 				</Button>
 
