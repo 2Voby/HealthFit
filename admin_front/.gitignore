@@ -27,3 +27,4 @@ dist-ssr
 .claude/settings.local.json
 test-results
 test-screenshots
+.claude/worktrees/
