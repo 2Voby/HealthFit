@@ -5,6 +5,13 @@ from src.schemas.attribute import (
     AttributeUpdateRequest,
 )
 from src.schemas.auth import LoginRequest, RegisterRequest
+from src.schemas.flow import (
+    FlowCreateRequest,
+    FlowQuestionResponse,
+    FlowResponse,
+    FlowsListResponse,
+    FlowUpdateRequest,
+)
 from src.schemas.offer import (
     OfferCreateRequest,
     OfferResponse,
@@ -30,6 +37,11 @@ __all__ = [
     "AttributeResponse",
     "AttributesListResponse",
     "AttributeUpdateRequest",
+    "FlowCreateRequest",
+    "FlowQuestionResponse",
+    "FlowResponse",
+    "FlowsListResponse",
+    "FlowUpdateRequest",
     "LoginRequest",
     "OfferCreateRequest",
     "OfferResponse",

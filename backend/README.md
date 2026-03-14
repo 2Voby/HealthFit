@@ -39,11 +39,17 @@ Additional CRUD:
 - `GET/POST/PATCH/DELETE /v1/attributes`
 - `GET/POST/PATCH/DELETE /v1/questions`
 - `GET/POST/PATCH/DELETE /v1/offers`
+- `GET/POST/PATCH/DELETE /v1/flows`
 
 Offer selection:
 - `POST /v1/offers/selection` with `{ "attributes": [1,2,3], "limit": 3 }`
 - Filters by `requires_all` and `excludes`, ranks by `priority` + matched `requires_optional`.
 
+Active flow:
+- `GET /v1/flows/active` returns only active flow with ordered questions and answers.
+- Flow has `is_active`, and when one flow is activated via create/update, others are deactivated automatically.
+
 ## Bootstrap
 On startup app creates authorities from `BOOTSTRAP_AUTHORITIES_CSV`.
 If `BOOTSTRAP_ADMIN_LOGIN` and `BOOTSTRAP_ADMIN_PASSWORD` are set, first run creates admin and grants `BOOTSTRAP_ADMIN_AUTHORITIES_CSV`.
+If `BOOTSTRAP_MOCK_DATA=true`, first run also seeds mock `attributes`, `questions`, `offers`, and one active `flow`.

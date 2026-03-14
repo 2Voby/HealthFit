@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     session_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
 
     db_generate_schemas: bool = True
+    bootstrap_mock_data: bool = True
 
     bootstrap_authorities_csv: str = "read_users,edit_users,edit_elements"
     bootstrap_admin_login: str | None = "admin"
