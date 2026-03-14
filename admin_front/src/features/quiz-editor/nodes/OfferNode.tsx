@@ -14,18 +14,33 @@ import {
 import { cn } from '@/lib/utils'
 import { useEditorStore } from '../store/editor.store'
 import { MOCK_OFFERS } from '../constants'
+import { AttributeBadge } from '../components/AttributeBadge'
+import { DroppableZone } from '../components/DroppableZone'
 import type { OfferNodeData } from '../types'
 
 type Props = NodeProps & { data: OfferNodeData }
+
+type AttrZone = 'requires_all' | 'requires_optional' | 'excludes'
+
+const ZONE_CONFIG: { key: AttrZone; label: string; color: string }[] = [
+  { key: 'requires_all', label: 'Requires All', color: 'text-red-600' },
+  { key: 'requires_optional', label: 'Requires Optional', color: 'text-blue-600' },
+  { key: 'excludes', label: 'Excludes', color: 'text-amber-600' },
+]
 
 export function OfferNode({ id, data, selected }: Props) {
   const updateNodeData = useEditorStore((s) => s.updateNodeData)
   const removeNode = useEditorStore((s) => s.removeNode)
 
-  const selectedOffer = MOCK_OFFERS.find((o) => o.id === data.offerId)
+  const selectedOffer = MOCK_OFFERS.find((o) => String(o.id) === data.offerId)
+
+  const handleRemoveAttribute = (zone: AttrZone, attrId: number) => {
+    const current = data[zone]
+    updateNodeData(id, { [zone]: current.filter((a) => a !== attrId) })
+  }
 
   return (
-    <div className={cn('w-[280px]', selected && 'ring-2 ring-primary rounded-lg')}>
+    <div className={cn('w-[320px]', selected && 'ring-2 ring-primary rounded-lg')}>
       <Handle type="target" position={Position.Top} className="!bg-amber-500" />
 
       <Card className="border-t-[3px] border-t-amber-500">
@@ -47,8 +62,14 @@ export function OfferNode({ id, data, selected }: Props) {
           <Select
             value={data.offerId}
             onValueChange={(v) => {
-              const offer = MOCK_OFFERS.find((o) => o.id === v)
-              updateNodeData(id, { offerId: v, label: offer?.name ?? '' })
+              const offer = MOCK_OFFERS.find((o) => String(o.id) === v)
+              updateNodeData(id, {
+                offerId: v,
+                label: offer?.name ?? '',
+                requires_all: offer?.requires_all ?? [],
+                requires_optional: offer?.requires_optional ?? [],
+                excludes: offer?.excludes ?? [],
+              })
             }}
           >
             <SelectTrigger className="nodrag nowheel h-8 text-xs">
@@ -56,7 +77,7 @@ export function OfferNode({ id, data, selected }: Props) {
             </SelectTrigger>
             <SelectContent>
               {MOCK_OFFERS.map((offer) => (
-                <SelectItem key={offer.id} value={offer.id}>
+                <SelectItem key={offer.id} value={String(offer.id)}>
                   {offer.name}
                 </SelectItem>
               ))}
@@ -73,6 +94,26 @@ export function OfferNode({ id, data, selected }: Props) {
             defaultValue={data.label}
             onBlur={(e) => updateNodeData(id, { label: e.target.value })}
           />
+
+          {ZONE_CONFIG.map(({ key, label, color }) => (
+            <div key={key} className="space-y-1">
+              <p className={`text-[10px] font-medium uppercase tracking-wider ${color}`}>
+                {label}
+              </p>
+              <DroppableZone
+                id={`offer-zone-${id}-${key}`}
+                data={{ type: 'offer-zone', nodeId: id, zone: key }}
+              >
+                {data[key].map((attrId) => (
+                  <AttributeBadge
+                    key={attrId}
+                    attributeId={attrId}
+                    onRemove={() => handleRemoveAttribute(key, attrId)}
+                  />
+                ))}
+              </DroppableZone>
+            </div>
+          ))}
         </CardContent>
       </Card>
     </div>

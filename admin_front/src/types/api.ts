@@ -105,7 +105,7 @@ export interface OfferSelectionResponse {
 }
 
 // ─── Questions ──────────────────────────────────────────────
-export type QuestionType = 'singe_choise' | 'multiple_choise' | 'manual_input'
+export type QuestionType = 'singe_choise' | 'multiple_choise' | 'manual_input' | 'text'
 
 export interface QuestionAnswerResponse {
   id: number
@@ -165,4 +165,89 @@ export interface UserUpdateRequest {
   login?: string | null
   password?: string | null
   authorities?: string[] | null
+}
+
+// ─── Flows ─────────────────────────────────────────────────
+export type FlowTransitionCondition = 'always' | 'answer_any' | 'answer_all'
+
+export interface FlowTransitionResponse {
+  id: number
+  from_question_id: number
+  to_question_id: number | null
+  condition_type: FlowTransitionCondition
+  answer_ids: number[]
+  priority: number
+  created_at: string
+  updated_at: string
+}
+
+export interface FlowTransitionCreateRequest {
+  from_question_id: number
+  to_question_id?: number | null
+  condition_type?: FlowTransitionCondition
+  answer_ids?: number[]
+  priority?: number
+}
+
+export interface FlowQuestionResponse {
+  question_id: number
+  position: number
+  question: QuestionResponse
+}
+
+export interface FlowResponse {
+  id: number
+  name: string
+  is_active: boolean
+  start_question_id: number | null
+  questions: FlowQuestionResponse[]
+  transitions: FlowTransitionResponse[]
+  created_at: string
+  updated_at: string
+}
+
+export interface FlowsListResponse {
+  items: FlowResponse[]
+  total: number
+}
+
+export interface FlowCreateRequest {
+  name: string
+  is_active?: boolean
+  question_ids?: number[]
+  transitions?: FlowTransitionCreateRequest[]
+}
+
+export interface FlowUpdateRequest {
+  name?: string | null
+  is_active?: boolean | null
+  question_ids?: number[] | null
+  transitions?: FlowTransitionCreateRequest[] | null
+}
+
+// ─── Flow History ──────────────────────────────────────────
+export type FlowHistoryAction = 'create' | 'update' | 'rollback' | 'dependency_update'
+
+export interface FlowSnapshot {
+  name: string
+  is_active: boolean
+  question_ids?: number[]
+  transitions?: FlowTransitionCreateRequest[]
+}
+
+export interface FlowHistoryEntryResponse {
+  id: number
+  flow_id: number
+  revision: number
+  action: FlowHistoryAction
+  source_revision: number | null
+  changed_by_user_id: number | null
+  snapshot: FlowSnapshot
+  created_at: string
+  updated_at: string
+}
+
+export interface FlowHistoryListResponse {
+  items: FlowHistoryEntryResponse[]
+  total: number
 }

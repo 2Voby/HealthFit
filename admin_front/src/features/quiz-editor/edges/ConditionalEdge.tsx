@@ -5,10 +5,9 @@ import {
   getSmoothStepPath,
   type EdgeProps,
 } from '@xyflow/react'
-import { Plus, Trash2, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Popover,
   PopoverContent,
@@ -22,19 +21,17 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useEditorStore } from '../store/editor.store'
-import { CONDITION_OPERATORS, USER_ATTRIBUTES } from '../constants'
-import type { ConditionalEdgeData, EdgeCondition, ConditionOperator } from '../types'
+import { TRANSITION_CONDITION_TYPES } from '../constants'
+import type { TransitionEdgeData, FlowTransitionConditionType } from '../types'
 
-type Props = EdgeProps & { data?: ConditionalEdgeData }
+type Props = EdgeProps & { data?: TransitionEdgeData }
 
-function conditionSummary(conditions: EdgeCondition[]): string {
-  if (conditions.length === 0) return ''
-  if (conditions.length === 1) {
-    const c = conditions[0]
-    const op = CONDITION_OPERATORS.find((o) => o.value === c.operator)
-    return `${c.attribute} ${op?.label ?? c.operator} ${Array.isArray(c.value) ? c.value.join(', ') : c.value}`
-  }
-  return `${conditions.length} conditions`
+function conditionLabel(data?: TransitionEdgeData): string {
+  if (!data || data.conditionType === 'always') return ''
+  const count = data.answerIds.length
+  if (data.conditionType === 'answer_any') return `any [${count}]`
+  if (data.conditionType === 'answer_all') return `all [${count}]`
+  return ''
 }
 
 export function ConditionalEdge({
@@ -57,9 +54,10 @@ export function ConditionalEdge({
     targetPosition,
   })
 
-  const conditions = data?.conditions ?? []
-  const updateEdgeConditions = useEditorStore((s) => s.updateEdgeConditions)
+  const updateEdgeData = useEditorStore((s) => s.updateEdgeData)
   const removeEdge = useEditorStore((s) => s.removeEdge)
+
+  const label = conditionLabel(data)
 
   return (
     <>
@@ -81,28 +79,26 @@ export function ConditionalEdge({
         >
           <Popover>
             <PopoverTrigger asChild>
-              {conditions.length > 0 ? (
+              {label ? (
                 <Badge
                   variant="secondary"
-                  className="cursor-pointer text-[10px] hover:bg-secondary/80 max-w-[160px] truncate"
+                  className="cursor-pointer text-[10px] hover:bg-secondary/80"
                 >
-                  {conditionSummary(conditions)}
+                  {label}
                 </Badge>
               ) : (
-                <Button
+                <Badge
                   variant="outline"
-                  size="icon"
-                  className="h-5 w-5 rounded-full border-dashed"
+                  className="cursor-pointer text-[10px] border-dashed hover:bg-accent"
                 >
-                  <Plus className="h-3 w-3" />
-                </Button>
+                  {data?.conditionType === 'always' ? 'always' : '+'}
+                </Badge>
               )}
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-3" align="center">
-              <ConditionEditor
-                edgeId={id}
-                conditions={conditions}
-                onChange={(c) => updateEdgeConditions(id, c)}
+            <PopoverContent className="w-56 p-3" align="center">
+              <TransitionEditor
+                data={data}
+                onChange={(d) => updateEdgeData(id, d)}
               />
             </PopoverContent>
           </Popover>
@@ -123,93 +119,46 @@ export function ConditionalEdge({
   )
 }
 
-function ConditionEditor({
-  edgeId,
-  conditions,
+function TransitionEditor({
+  data,
   onChange,
 }: {
-  edgeId: string
-  conditions: EdgeCondition[]
-  onChange: (conditions: EdgeCondition[]) => void
+  data?: TransitionEdgeData
+  onChange: (data: Partial<TransitionEdgeData>) => void
 }) {
-  const [local, setLocal] = useState<EdgeCondition[]>(conditions)
+  const [conditionType, setConditionType] = useState<FlowTransitionConditionType>(
+    data?.conditionType ?? 'always',
+  )
 
-  const update = (index: number, patch: Partial<EdgeCondition>) => {
-    const next = local.map((c, i) => (i === index ? { ...c, ...patch } : c))
-    setLocal(next)
-    onChange(next)
-  }
-
-  const add = () => {
-    const next = [...local, { attribute: '', operator: 'eq' as ConditionOperator, value: '' }]
-    setLocal(next)
-    onChange(next)
-  }
-
-  const remove = (index: number) => {
-    const next = local.filter((_, i) => i !== index)
-    setLocal(next)
-    onChange(next)
+  const handleTypeChange = (v: string) => {
+    const newType = v as FlowTransitionConditionType
+    setConditionType(newType)
+    onChange({
+      conditionType: newType,
+      ...(newType === 'always' ? { answerIds: [] } : {}),
+    })
   }
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium">Conditions</p>
-      {local.map((condition, i) => (
-        <div key={i} className="flex items-center gap-1">
-          <Select
-            value={condition.attribute}
-            onValueChange={(v) => update(i, { attribute: v })}
-          >
-            <SelectTrigger className="h-7 text-[11px] flex-1">
-              <SelectValue placeholder="attr" />
-            </SelectTrigger>
-            <SelectContent>
-              {USER_ATTRIBUTES.map((attr) => (
-                <SelectItem key={attr} value={attr}>
-                  {attr}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={condition.operator}
-            onValueChange={(v) => update(i, { operator: v as ConditionOperator })}
-          >
-            <SelectTrigger className="h-7 text-[11px] w-14">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {CONDITION_OPERATORS.map((op) => (
-                <SelectItem key={op.value} value={op.value}>
-                  {op.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Input
-            className="h-7 text-[11px] w-20"
-            value={typeof condition.value === 'string' ? condition.value : String(condition.value)}
-            placeholder="value"
-            onChange={(e) => update(i, { value: e.target.value })}
-          />
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
-            onClick={() => remove(i)}
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        </div>
-      ))}
-      <Button variant="outline" size="sm" className="h-7 w-full text-xs" onClick={add}>
-        <Plus className="h-3 w-3 mr-1" />
-        Add condition
-      </Button>
+      <p className="text-xs font-medium">Transition type</p>
+      <Select value={conditionType} onValueChange={handleTypeChange}>
+        <SelectTrigger className="h-7 text-[11px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {TRANSITION_CONDITION_TYPES.map((ct) => (
+            <SelectItem key={ct.value} value={ct.value}>
+              {ct.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {conditionType !== 'always' && (
+        <p className="text-[10px] text-muted-foreground">
+          Answer-based conditions are resolved automatically from connected answer handles.
+        </p>
+      )}
     </div>
   )
 }
