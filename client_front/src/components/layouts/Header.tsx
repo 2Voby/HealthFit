@@ -19,7 +19,7 @@ export default function Header() {
 							<rect x="22" y="11" width="4" height="10" rx="1.5" fill="white" />
 							<rect x="10" y="14.5" width="12" height="3" rx="1.5" fill="white" />
 						</svg>
-						<span className="text-white text-[20px] font-bold tracking-wide">Formfit</span>
+						<span className="text-white text-[20px] font-bold tracking-wide">HealthFit</span>
 					</div>
 				</div>
 			</div>
