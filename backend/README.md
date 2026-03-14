@@ -18,6 +18,7 @@ Swagger UI:
 - http://localhost:8000/docs
 - Health check: `GET /v1/health`
 - Static API examples: `GET /static/api_examples.html`
+- Static admin builder (drag-n-drop flow): `GET /static/admin_builder.html`
 
 ## Auth flow
 1. `POST /v1/auth/register` or `POST /v1/auth/login`

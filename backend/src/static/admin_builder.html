@@ -1,0 +1,1566 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flow Admin Builder</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;700&display=swap");
+
+    :root {
+      --bg: #eef4f8;
+      --bg-accent: #d9f0e6;
+      --surface: #ffffff;
+      --surface-2: #f7fbff;
+      --ink: #1b2430;
+      --muted: #5f6f82;
+      --line: #cad8e4;
+      --primary: #0d8f6f;
+      --primary-2: #0b6d8f;
+      --warn: #cf4d1f;
+      --ok: #0d8f3a;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 0% 0%, var(--bg-accent) 0, transparent 35%),
+        linear-gradient(160deg, #ecf2f7 0%, var(--bg) 60%, #e7f0f7 100%);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 1580px;
+      margin: 0 auto;
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero, .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 14px 24px rgba(22, 38, 52, 0.08);
+    }
+
+    .hero {
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      font-family: "Space Grotesk", sans-serif;
+      letter-spacing: 0.01em;
+    }
+
+    .hero h1 {
+      font-size: 28px;
+      line-height: 1.1;
+    }
+
+    .muted { color: var(--muted); }
+
+    .row {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 960px) {
+      .row.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .row.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .row.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+
+    .columns {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 1300px) {
+      .columns {
+        grid-template-columns: 1.1fr 1.1fr 1fr;
+      }
+    }
+
+    .panel {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 4px;
+      color: #394a5e;
+      font-weight: 600;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font: inherit;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+    }
+
+    .btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      color: #fff;
+      background: var(--primary);
+      font-weight: 600;
+      font-family: "Space Grotesk", sans-serif;
+      letter-spacing: 0.01em;
+    }
+
+    button.secondary { background: #42556a; }
+    button.info { background: var(--primary-2); }
+    button.warn { background: var(--warn); }
+    button.ghost {
+      background: transparent;
+      color: #223245;
+      border: 1px solid var(--line);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .list {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface-2);
+      min-height: 80px;
+      max-height: 280px;
+      overflow: auto;
+      padding: 6px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .item {
+      border: 1px solid #d6e3ed;
+      border-radius: 10px;
+      padding: 8px;
+      background: #fff;
+      display: grid;
+      gap: 6px;
+    }
+
+    .item-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tiny {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .pill {
+      font-size: 11px;
+      border-radius: 999px;
+      border: 1px solid #bdd5e7;
+      color: #265072;
+      padding: 2px 8px;
+      display: inline-block;
+      background: #f3f9fd;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+
+    .drag-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    @media (min-width: 1200px) {
+      .drag-grid {
+        grid-template-columns: 0.9fr 1.1fr 1.2fr;
+      }
+    }
+
+    .drop-zone {
+      border: 2px dashed #aac5d9;
+      border-radius: 12px;
+      padding: 8px;
+      background: #f9fcff;
+      min-height: 60px;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .drop-zone.over {
+      border-color: var(--primary);
+      background: #ecf9f4;
+    }
+
+    .flow-q {
+      cursor: move;
+      border: 1px solid #bfd6e5;
+      border-radius: 10px;
+      background: #ffffff;
+      padding: 8px;
+    }
+
+    .answer-chip {
+      display: inline-block;
+      border-radius: 999px;
+      border: 1px solid #b9d6be;
+      background: #ebf7ee;
+      color: #21552e;
+      padding: 3px 8px;
+      margin: 3px 4px 0 0;
+      font-size: 12px;
+      cursor: move;
+    }
+
+    .transition-box {
+      border: 1px solid #d4e2eb;
+      border-radius: 12px;
+      background: #fff;
+      padding: 8px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .log {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 8px;
+      background: #0f1a2b;
+      color: #d2deea;
+      min-height: 160px;
+      max-height: 300px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+
+    .status-badge {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: #5e7082;
+    }
+
+    .status-badge.ok { background: var(--ok); }
+    .status-badge.err { background: var(--warn); }
+
+    .hr {
+      height: 1px;
+      border: 0;
+      background: #d9e4ee;
+      margin: 4px 0;
+    }
+
+    .answers-list {
+      display: grid;
+      gap: 6px;
+    }
+
+    .ans-row {
+      border: 1px solid #dae5ee;
+      border-radius: 10px;
+      padding: 6px;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <section class="hero">
+    <div class="panel-head">
+      <h1>Flow Admin Builder</h1>
+      <span id="statusBadge" class="status-badge">idle</span>
+    </div>
+    <p class="muted">Легка адмінка з drag-n-drop для шляху flow, transition-правил, історії змін і rollback.</p>
+    <div class="row four">
+      <div>
+        <label for="baseUrl">Base URL</label>
+        <input id="baseUrl" value="http://localhost:8000/v1">
+      </div>
+      <div>
+        <label for="login">Login</label>
+        <input id="login" value="admin">
+      </div>
+      <div>
+        <label for="password">Password</label>
+        <input id="password" type="password" value="admin12345">
+      </div>
+      <div>
+        <label>Session</label>
+        <div class="btns">
+          <button id="btnLogin">Login</button>
+          <button id="btnRegister" class="secondary">Register</button>
+          <button id="btnMe" class="info">Me</button>
+          <button id="btnLogout" class="warn">Logout</button>
+        </div>
+      </div>
+    </div>
+    <div class="row two">
+      <div class="tiny">Використовує cookie-сесію (credentials: include). GET публічні, зміни вимагають <code>edit_elements</code>.</div>
+      <div class="tiny" id="meInfo">user: -</div>
+    </div>
+  </section>
+
+  <section class="columns">
+    <div class="panel">
+      <div class="panel-head"><h2>Attributes</h2><button id="btnReloadAttributes" class="ghost">Reload</button></div>
+      <div class="row two">
+        <div>
+          <label for="attrId">ID (for update/delete)</label>
+          <input id="attrId" type="number" placeholder="auto for create">
+        </div>
+        <div>
+          <label for="attrName">Name</label>
+          <input id="attrName" placeholder="goal_strength">
+        </div>
+      </div>
+      <div class="btns">
+        <button id="btnAttrCreate">Create</button>
+        <button id="btnAttrUpdate" class="info">Update</button>
+        <button id="btnAttrDelete" class="warn">Delete</button>
+      </div>
+      <div id="attributesList" class="list"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Questions</h2><button id="btnReloadQuestions" class="ghost">Reload</button></div>
+      <div class="row two">
+        <div>
+          <label for="qId">ID (for update/delete)</label>
+          <input id="qId" type="number" placeholder="auto for create">
+        </div>
+        <div>
+          <label for="qType">Type</label>
+          <select id="qType">
+            <option value="singe_choise">singe_choise</option>
+            <option value="multiple_choise">multiple_choise</option>
+            <option value="manual_input">manual_input</option>
+          </select>
+        </div>
+      </div>
+      <div class="row two">
+        <div>
+          <label for="qText">Question text</label>
+          <input id="qText" placeholder="Яка ваша ціль?">
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <label style="display:flex;align-items:center;gap:8px;margin:0;">
+            <input id="qRequires" type="checkbox" style="width:auto;">
+            requires = true
+          </label>
+        </div>
+      </div>
+      <div class="panel-head">
+        <h3>Answers</h3>
+        <button id="btnAddAnswerRow" class="ghost">+ Answer</button>
+      </div>
+      <div id="answersEditor" class="answers-list"></div>
+      <div class="btns">
+        <button id="btnQuestionCreate">Create</button>
+        <button id="btnQuestionUpdate" class="info">Update</button>
+        <button id="btnQuestionDelete" class="warn">Delete</button>
+      </div>
+      <div id="questionsList" class="list"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Offers</h2><button id="btnReloadOffers" class="ghost">Reload</button></div>
+      <div class="row two">
+        <div>
+          <label for="offerId">ID (for update/delete)</label>
+          <input id="offerId" type="number" placeholder="auto for create">
+        </div>
+        <div>
+          <label for="offerPriority">Priority</label>
+          <input id="offerPriority" type="number" value="100">
+        </div>
+      </div>
+      <div class="row two">
+        <div>
+          <label for="offerName">Name</label>
+          <input id="offerName" placeholder="Lean Strength Builder">
+        </div>
+        <div>
+          <label for="offerPrice">Price</label>
+          <input id="offerPrice" type="number" step="0.01" value="49.99">
+        </div>
+      </div>
+      <div>
+        <label for="offerDescription">Description</label>
+        <textarea id="offerDescription" placeholder="Digital plan + physical kit"></textarea>
+      </div>
+      <div class="row three">
+        <div>
+          <label for="offerRequiresAll">requires_all (attr IDs CSV)</label>
+          <input id="offerRequiresAll" placeholder="1,2">
+        </div>
+        <div>
+          <label for="offerRequiresOptional">requires_optional (attr IDs CSV)</label>
+          <input id="offerRequiresOptional" placeholder="3,4">
+        </div>
+        <div>
+          <label for="offerExcludes">excludes (attr IDs CSV)</label>
+          <input id="offerExcludes" placeholder="10">
+        </div>
+      </div>
+      <div class="btns">
+        <button id="btnOfferCreate">Create</button>
+        <button id="btnOfferUpdate" class="info">Update</button>
+        <button id="btnOfferDelete" class="warn">Delete</button>
+      </div>
+      <div class="row two">
+        <div>
+          <label for="selectionAttrs">Offer selection attrs CSV</label>
+          <input id="selectionAttrs" placeholder="1,2,3">
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button id="btnOfferSelection" class="secondary" style="width:100%;">Test /offers/selection</button>
+        </div>
+      </div>
+      <div id="offersList" class="list"></div>
+    </div>
+  </section>
+
+  <section class="columns">
+    <div class="panel">
+      <div class="panel-head"><h2>Users</h2><button id="btnReloadUsers" class="ghost">Reload</button></div>
+      <div class="row two">
+        <div>
+          <label for="userId">ID (for update/delete)</label>
+          <input id="userId" type="number">
+        </div>
+        <div>
+          <label for="userLogin">Login</label>
+          <input id="userLogin" placeholder="manager1">
+        </div>
+      </div>
+      <div class="row two">
+        <div>
+          <label for="userPassword">Password</label>
+          <input id="userPassword" type="password" placeholder="StrongPass123">
+        </div>
+        <div>
+          <label for="userAuthorities">Authorities CSV</label>
+          <input id="userAuthorities" value="edit_elements">
+        </div>
+      </div>
+      <div class="btns">
+        <button id="btnUserCreate">Create</button>
+        <button id="btnUserUpdate" class="info">Update</button>
+        <button id="btnUserDelete" class="warn">Delete</button>
+      </div>
+      <div id="usersList" class="list"></div>
+    </div>
+
+    <div class="panel" style="grid-column: span 2;">
+      <div class="panel-head">
+        <h2>Flow Builder (Drag & Drop)</h2>
+        <div class="btns">
+          <button id="btnReloadFlows" class="ghost">Reload Flows</button>
+          <button id="btnLoadActiveFlow" class="secondary">Load Active</button>
+        </div>
+      </div>
+      <div class="row four">
+        <div>
+          <label for="flowSelect">Existing flow</label>
+          <select id="flowSelect"></select>
+        </div>
+        <div>
+          <label for="flowName">Flow name</label>
+          <input id="flowName" placeholder="Landing Flow A">
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <label style="display:flex;align-items:center;gap:8px;margin:0;">
+            <input id="flowIsActive" type="checkbox" style="width:auto;">
+            is_active
+          </label>
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <div class="btns" style="width:100%;">
+            <button id="btnNewFlow" class="secondary">New</button>
+            <button id="btnSaveFlow">Save</button>
+            <button id="btnDeleteFlow" class="warn">Delete</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="drag-grid">
+        <div>
+          <label>Question bank (drag into path)</label>
+          <div id="questionBank" class="list"></div>
+        </div>
+        <div>
+          <label>Flow path (drag to reorder)</label>
+          <div id="flowPath" class="drop-zone"></div>
+          <p class="tiny">Порядок тут = <code>question_ids</code>.</p>
+        </div>
+        <div>
+          <div class="panel-head">
+            <label style="margin:0;">Transitions</label>
+            <button id="btnAddTransition" class="ghost">+ Transition</button>
+          </div>
+          <div id="answerBank" class="list" style="max-height:190px;"></div>
+          <div id="transitionsList" class="list" style="max-height:380px;"></div>
+        </div>
+      </div>
+
+      <hr class="hr">
+      <div class="row three">
+        <div>
+          <label for="runnerQuestion">Runner current question</label>
+          <select id="runnerQuestion"></select>
+        </div>
+        <div>
+          <label for="runnerAnswers">Runner selected answers IDs CSV</label>
+          <input id="runnerAnswers" placeholder="11,12">
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <div class="btns" style="width:100%;">
+            <button id="btnResolveNextSelected" class="info">/flows/{id}/next</button>
+            <button id="btnResolveNextActive" class="secondary">/flows/active/next</button>
+          </div>
+        </div>
+      </div>
+
+      <hr class="hr">
+      <div class="panel-head">
+        <h3>History</h3>
+        <button id="btnReloadHistory" class="ghost">Reload History</button>
+      </div>
+      <div id="historyList" class="list" style="max-height:240px;"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Response Log</h2>
+      <button id="btnClearLog" class="ghost">Clear</button>
+    </div>
+    <div id="log" class="log">Ready.</div>
+  </section>
+</div>
+
+<script>
+  const state = {
+    attributes: [],
+    questions: [],
+    offers: [],
+    users: [],
+    flows: [],
+    flowDraft: {
+      id: null,
+      name: "",
+      is_active: false,
+      question_ids: [],
+      transitions: []
+    }
+  };
+
+  const statusBadge = document.getElementById("statusBadge");
+  const logEl = document.getElementById("log");
+
+  function byId(id) {
+    return document.getElementById(id);
+  }
+
+  function escapeHtml(raw) {
+    return String(raw)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll("\"", "&quot;");
+  }
+
+  function parseCsvIds(value) {
+    if (!value || !value.trim()) return [];
+    return [...new Set(value.split(",").map(part => Number(part.trim())).filter(Number.isFinite))];
+  }
+
+  function setStatus(text, ok = true) {
+    statusBadge.textContent = text;
+    statusBadge.classList.remove("ok", "err");
+    statusBadge.classList.add(ok ? "ok" : "err");
+  }
+
+  function appendLog(title, payload) {
+    const stamp = new Date().toLocaleTimeString();
+    const block = `[${stamp}] ${title}\n${typeof payload === "string" ? payload : JSON.stringify(payload, null, 2)}\n\n`;
+    logEl.textContent = block + logEl.textContent;
+  }
+
+  function getBaseUrl() {
+    return byId("baseUrl").value.replace(/\/+$/, "");
+  }
+
+  async function api(method, path, body) {
+    const url = getBaseUrl() + path;
+    const options = {
+      method,
+      credentials: "include",
+      headers: {}
+    };
+    if (body !== undefined) {
+      options.headers["Content-Type"] = "application/json";
+      options.body = JSON.stringify(body);
+    }
+
+    const resp = await fetch(url, options);
+    const text = await resp.text();
+    let data = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch (_) {
+      data = text;
+    }
+    appendLog(`${method} ${path} -> ${resp.status}`, { request: body ?? null, response: data });
+    if (!resp.ok) {
+      throw new Error(`${resp.status} ${resp.statusText}: ${typeof data === "string" ? data : JSON.stringify(data)}`);
+    }
+    return data;
+  }
+
+  function questionById(id) {
+    return state.questions.find(q => q.id === id) || null;
+  }
+
+  function answerById(id) {
+    for (const q of state.questions) {
+      const a = (q.answers || []).find(ans => ans.id === id);
+      if (a) return { answer: a, question: q };
+    }
+    return null;
+  }
+
+  function transitionTemplate() {
+    return {
+      from_question_id: state.flowDraft.question_ids[0] || null,
+      to_question_id: null,
+      condition_type: "answer_any",
+      answer_ids: [],
+      priority: 100
+    };
+  }
+
+  async function safeRun(title, fn) {
+    try {
+      setStatus(title + "...");
+      await fn();
+      setStatus(title + " done", true);
+    } catch (error) {
+      setStatus("error", false);
+      appendLog("CLIENT ERROR", String(error));
+      alert(String(error));
+    }
+  }
+
+  async function reloadAttributes() {
+    const data = await api("GET", "/attributes/?offset=0&limit=300");
+    state.attributes = data.items || [];
+    renderAttributes();
+    renderQuestionAnswerRows();
+  }
+
+  async function reloadQuestions() {
+    const data = await api("GET", "/questions/?offset=0&limit=300");
+    state.questions = data.items || [];
+    renderQuestions();
+    renderQuestionBank();
+    renderFlowPath();
+    renderTransitions();
+    renderAnswerBank();
+    renderRunnerOptions();
+  }
+
+  async function reloadOffers() {
+    const data = await api("GET", "/offers/?offset=0&limit=300");
+    state.offers = data.items || [];
+    renderOffers();
+  }
+
+  async function reloadUsers() {
+    const data = await api("GET", "/users/?offset=0&limit=300");
+    state.users = data.items || [];
+    renderUsers();
+  }
+
+  async function reloadFlows() {
+    const data = await api("GET", "/flows/?offset=0&limit=300");
+    state.flows = data.items || [];
+    renderFlowOptions();
+    if (state.flowDraft.id) {
+      const exists = state.flows.find(f => f.id === state.flowDraft.id);
+      if (!exists) newFlowDraft();
+    }
+  }
+
+  async function reloadAll() {
+    await Promise.all([
+      reloadAttributes(),
+      reloadQuestions(),
+      reloadOffers(),
+      reloadUsers(),
+      reloadFlows()
+    ]);
+  }
+
+  function renderAttributes() {
+    const wrap = byId("attributesList");
+    if (!state.attributes.length) {
+      wrap.innerHTML = '<div class="tiny">No attributes yet.</div>';
+      return;
+    }
+    wrap.innerHTML = state.attributes.map(attr => `
+      <div class="item">
+        <div class="item-top">
+          <strong>#${attr.id} ${escapeHtml(attr.name)}</strong>
+          <div class="btns">
+            <button class="ghost" data-action="edit-attr" data-id="${attr.id}">Edit</button>
+          </div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function renderQuestionAnswerRows() {
+    const host = byId("answersEditor");
+    const rows = host.querySelectorAll(".ans-row");
+    if (!rows.length) {
+      host.innerHTML = '<div class="tiny">No answers. Add rows, or keep empty for manual_input.</div>';
+      return;
+    }
+    rows.forEach((row, idx) => {
+      row.querySelector(".ans-index").textContent = `#${idx + 1}`;
+    });
+  }
+
+  function newAnswerRow(text = "", attributeIds = []) {
+    const host = byId("answersEditor");
+    const row = document.createElement("div");
+    row.className = "ans-row";
+    row.innerHTML = `
+      <div class="row three">
+        <div>
+          <label>Answer <span class="ans-index"></span></label>
+          <input class="ans-text" value="${escapeHtml(text)}" placeholder="Text">
+        </div>
+        <div>
+          <label>Attribute IDs CSV</label>
+          <input class="ans-attrs" value="${attributeIds.join(",")}" placeholder="1,3,4">
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button class="warn ans-remove" style="width:100%;">Remove</button>
+        </div>
+      </div>
+    `;
+    row.querySelector(".ans-remove").addEventListener("click", () => {
+      row.remove();
+      renderQuestionAnswerRows();
+    });
+    host.appendChild(row);
+    renderQuestionAnswerRows();
+  }
+
+  function collectAnswersFromEditor() {
+    const rows = [...byId("answersEditor").querySelectorAll(".ans-row")];
+    return rows
+      .map(row => ({
+        text: row.querySelector(".ans-text").value.trim(),
+        attributes: parseCsvIds(row.querySelector(".ans-attrs").value)
+      }))
+      .filter(answer => answer.text.length > 0);
+  }
+
+  function clearQuestionForm() {
+    byId("qId").value = "";
+    byId("qText").value = "";
+    byId("qType").value = "singe_choise";
+    byId("qRequires").checked = false;
+    byId("answersEditor").innerHTML = "";
+    renderQuestionAnswerRows();
+  }
+
+  function renderQuestions() {
+    const host = byId("questionsList");
+    if (!state.questions.length) {
+      host.innerHTML = '<div class="tiny">No questions yet.</div>';
+      return;
+    }
+    host.innerHTML = state.questions.map(q => `
+      <div class="item">
+        <div class="item-top">
+          <strong>#${q.id} ${escapeHtml(q.text)}</strong>
+          <button class="ghost" data-action="edit-question" data-id="${q.id}">Edit</button>
+        </div>
+        <div class="tiny">type: ${escapeHtml(q.type)} | requires: ${q.requires ? "true" : "false"} | answers: ${(q.answers || []).length}</div>
+      </div>
+    `).join("");
+  }
+
+  function renderOffers() {
+    const host = byId("offersList");
+    if (!state.offers.length) {
+      host.innerHTML = '<div class="tiny">No offers yet.</div>';
+      return;
+    }
+    host.innerHTML = state.offers.map(offer => `
+      <div class="item">
+        <div class="item-top">
+          <strong>#${offer.id} ${escapeHtml(offer.name)}</strong>
+          <button class="ghost" data-action="edit-offer" data-id="${offer.id}">Edit</button>
+        </div>
+        <div class="tiny">price: ${offer.price} | priority: ${offer.priority}</div>
+      </div>
+    `).join("");
+  }
+
+  function renderUsers() {
+    const host = byId("usersList");
+    if (!state.users.length) {
+      host.innerHTML = '<div class="tiny">No users yet.</div>';
+      return;
+    }
+    host.innerHTML = state.users.map(user => `
+      <div class="item">
+        <div class="item-top">
+          <strong>#${user.id} ${escapeHtml(user.login)}</strong>
+          <button class="ghost" data-action="edit-user" data-id="${user.id}">Edit</button>
+        </div>
+        <div>${(user.authorities || []).map(a => `<span class="pill">${escapeHtml(a)}</span>`).join("")}</div>
+      </div>
+    `).join("");
+  }
+
+  function renderFlowOptions() {
+    const select = byId("flowSelect");
+    const options = ['<option value="">-- New flow --</option>']
+      .concat(state.flows.map(flow => `<option value="${flow.id}">#${flow.id} ${escapeHtml(flow.name)}${flow.is_active ? " (active)" : ""}</option>`));
+    select.innerHTML = options.join("");
+    if (state.flowDraft.id) select.value = String(state.flowDraft.id);
+  }
+
+  function newFlowDraft() {
+    state.flowDraft = {
+      id: null,
+      name: "",
+      is_active: false,
+      question_ids: [],
+      transitions: []
+    };
+    byId("flowSelect").value = "";
+    byId("flowName").value = "";
+    byId("flowIsActive").checked = false;
+    renderFlowPath();
+    renderAnswerBank();
+    renderTransitions();
+    renderRunnerOptions();
+    renderHistory([]);
+  }
+
+  function syncFlowDraftHeader() {
+    state.flowDraft.name = byId("flowName").value.trim();
+    state.flowDraft.is_active = byId("flowIsActive").checked;
+  }
+
+  function loadFlowIntoDraft(flow) {
+    state.flowDraft = {
+      id: flow.id,
+      name: flow.name || "",
+      is_active: !!flow.is_active,
+      question_ids: (flow.questions || [])
+        .sort((a, b) => a.position - b.position)
+        .map(q => q.question_id),
+      transitions: (flow.transitions || []).map(t => ({
+        from_question_id: t.from_question_id,
+        to_question_id: t.to_question_id,
+        condition_type: t.condition_type,
+        answer_ids: [...(t.answer_ids || [])],
+        priority: t.priority ?? 100
+      }))
+    };
+    byId("flowName").value = state.flowDraft.name;
+    byId("flowIsActive").checked = state.flowDraft.is_active;
+    byId("flowSelect").value = String(flow.id);
+    renderFlowPath();
+    renderAnswerBank();
+    renderTransitions();
+    renderRunnerOptions();
+  }
+
+  function renderQuestionBank() {
+    const host = byId("questionBank");
+    if (!state.questions.length) {
+      host.innerHTML = '<div class="tiny">No questions available.</div>';
+      return;
+    }
+    host.innerHTML = state.questions.map(q => `
+      <div class="flow-q" draggable="true" data-drag-type="question-bank" data-question-id="${q.id}">
+        <div><strong>#${q.id}</strong> ${escapeHtml(q.text)}</div>
+        <div class="tiny">${escapeHtml(q.type)} | answers: ${(q.answers || []).length}</div>
+      </div>
+    `).join("");
+  }
+
+  function renderFlowPath() {
+    const host = byId("flowPath");
+    if (!state.flowDraft.question_ids.length) {
+      host.innerHTML = '<div class="tiny">Drag questions here to build path.</div>';
+      return;
+    }
+
+    host.innerHTML = state.flowDraft.question_ids.map((questionId, index) => {
+      const q = questionById(questionId);
+      const text = q ? q.text : `Unknown question #${questionId}`;
+      return `
+        <div class="flow-q path-item" draggable="true" data-drag-type="flow-path" data-index="${index}">
+          <div class="item-top">
+            <div><strong>${index + 1}.</strong> #${questionId} ${escapeHtml(text)}</div>
+            <button class="warn btn-remove-q" data-index="${index}">x</button>
+          </div>
+          <div class="tiny">Drop above/below to reorder.</div>
+        </div>
+      `;
+    }).join("") + '<div class="tiny">Drop here to append.</div>';
+  }
+
+  function renderAnswerBank() {
+    const host = byId("answerBank");
+    if (!state.flowDraft.question_ids.length) {
+      host.innerHTML = '<div class="tiny">Add questions to flow path first.</div>';
+      return;
+    }
+
+    const blocks = [];
+    for (const questionId of state.flowDraft.question_ids) {
+      const q = questionById(questionId);
+      if (!q || !q.answers || !q.answers.length) continue;
+      const chips = q.answers.map(ans => `
+        <span class="answer-chip" draggable="true" data-drag-type="answer-chip" data-answer-id="${ans.id}" data-question-id="${q.id}">
+          #${ans.id}: ${escapeHtml(ans.text)}
+        </span>
+      `).join("");
+      blocks.push(`<div class="item"><div><strong>#${q.id} ${escapeHtml(q.text)}</strong></div><div>${chips}</div></div>`);
+    }
+    host.innerHTML = blocks.length ? blocks.join("") : '<div class="tiny">No predefined answers in path questions.</div>';
+  }
+
+  function renderTransitions() {
+    const host = byId("transitionsList");
+    if (!state.flowDraft.transitions.length) {
+      host.innerHTML = '<div class="tiny">No transitions yet. Add one.</div>';
+      return;
+    }
+    const questionOptions = state.flowDraft.question_ids
+      .map(qid => {
+        const q = questionById(qid);
+        return `<option value="${qid}">#${qid} ${escapeHtml(q ? q.text : "Unknown")}</option>`;
+      }).join("");
+
+    host.innerHTML = state.flowDraft.transitions.map((t, idx) => {
+      const toOptions = `<option value="">END</option>${questionOptions}`;
+      const answerPills = (t.answer_ids || []).map(aid => {
+        const bundle = answerById(aid);
+        const text = bundle ? bundle.answer.text : `Unknown #${aid}`;
+        return `<span class="pill">#${aid} ${escapeHtml(text)} <button class="ghost btn-unlink-answer" data-tidx="${idx}" data-aid="${aid}" style="padding:0 4px;">x</button></span>`;
+      }).join("");
+      return `
+        <div class="transition-box" data-transition-index="${idx}">
+          <div class="item-top">
+            <strong>Transition ${idx + 1}</strong>
+            <button class="warn btn-remove-transition" data-index="${idx}">Delete</button>
+          </div>
+          <div class="row four">
+            <div>
+              <label>from_question</label>
+              <select class="tr-from" data-index="${idx}">${questionOptions}</select>
+            </div>
+            <div>
+              <label>to_question</label>
+              <select class="tr-to" data-index="${idx}">${toOptions}</select>
+            </div>
+            <div>
+              <label>condition_type</label>
+              <select class="tr-condition" data-index="${idx}">
+                <option value="always">always</option>
+                <option value="answer_any">answer_any</option>
+                <option value="answer_all">answer_all</option>
+              </select>
+            </div>
+            <div>
+              <label>priority</label>
+              <input class="tr-priority" data-index="${idx}" type="number" value="${t.priority ?? 100}">
+            </div>
+          </div>
+          <div>
+            <label>answer_ids drop-zone</label>
+            <div class="drop-zone tr-answer-drop" data-index="${idx}">${answerPills || '<span class="tiny">Drop answer chips here</span>'}</div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    state.flowDraft.transitions.forEach((t, idx) => {
+      const fromSel = host.querySelector(`.tr-from[data-index="${idx}"]`);
+      const toSel = host.querySelector(`.tr-to[data-index="${idx}"]`);
+      const condSel = host.querySelector(`.tr-condition[data-index="${idx}"]`);
+      if (fromSel) fromSel.value = t.from_question_id ?? "";
+      if (toSel) toSel.value = t.to_question_id ?? "";
+      if (condSel) condSel.value = t.condition_type || "answer_any";
+    });
+  }
+
+  function renderRunnerOptions() {
+    const sel = byId("runnerQuestion");
+    const options = state.flowDraft.question_ids.map(qid => {
+      const q = questionById(qid);
+      return `<option value="${qid}">#${qid} ${escapeHtml(q ? q.text : "Unknown")}</option>`;
+    });
+    sel.innerHTML = options.join("");
+  }
+
+  async function loadHistory() {
+    if (!state.flowDraft.id) {
+      renderHistory([]);
+      return;
+    }
+    const data = await api("GET", `/flows/${state.flowDraft.id}/history?offset=0&limit=200`);
+    renderHistory(data.items || []);
+  }
+
+  function renderHistory(items) {
+    const host = byId("historyList");
+    if (!items.length) {
+      host.innerHTML = '<div class="tiny">No history yet.</div>';
+      return;
+    }
+    host.innerHTML = items.map(entry => `
+      <div class="item">
+        <div class="item-top">
+          <strong>rev ${entry.revision} | ${escapeHtml(entry.action)}</strong>
+          <button class="warn btn-rollback" data-rev="${entry.revision}">Rollback</button>
+        </div>
+        <div class="tiny">changed_by: ${entry.changed_by_user_id ?? "-"} | source_revision: ${entry.source_revision ?? "-"}</div>
+      </div>
+    `).join("");
+  }
+
+  function validateTransitionsForDraft() {
+    const pathSet = new Set(state.flowDraft.question_ids);
+    state.flowDraft.transitions = state.flowDraft.transitions
+      .filter(t => pathSet.has(Number(t.from_question_id)))
+      .map(t => {
+        const cleaned = { ...t };
+        cleaned.from_question_id = Number(cleaned.from_question_id);
+        cleaned.to_question_id = cleaned.to_question_id === null || cleaned.to_question_id === "" ? null : Number(cleaned.to_question_id);
+        cleaned.priority = Number(cleaned.priority ?? 100);
+
+        if (!pathSet.has(cleaned.from_question_id)) return null;
+        if (cleaned.to_question_id !== null && !pathSet.has(cleaned.to_question_id)) cleaned.to_question_id = null;
+
+        const allowedAnswers = new Set(((questionById(cleaned.from_question_id)?.answers) || []).map(a => a.id));
+        cleaned.answer_ids = [...new Set((cleaned.answer_ids || []).map(Number).filter(aid => allowedAnswers.has(aid)))];
+
+        if (cleaned.condition_type === "always") cleaned.answer_ids = [];
+        if (cleaned.condition_type !== "always" && !cleaned.answer_ids.length) {
+          cleaned.condition_type = "always";
+        }
+        return cleaned;
+      })
+      .filter(Boolean);
+  }
+
+  function collectFlowPayload() {
+    syncFlowDraftHeader();
+    if (!state.flowDraft.name) {
+      throw new Error("Flow name is required");
+    }
+    if (!state.flowDraft.question_ids.length) {
+      throw new Error("Flow must contain at least one question");
+    }
+    validateTransitionsForDraft();
+    return {
+      name: state.flowDraft.name,
+      is_active: !!state.flowDraft.is_active,
+      question_ids: [...state.flowDraft.question_ids],
+      transitions: state.flowDraft.transitions.map(t => ({
+        from_question_id: t.from_question_id,
+        to_question_id: t.to_question_id,
+        condition_type: t.condition_type,
+        answer_ids: t.condition_type === "always" ? [] : [...t.answer_ids],
+        priority: Number(t.priority ?? 100)
+      }))
+    };
+  }
+
+  function initEvents() {
+    byId("btnClearLog").addEventListener("click", () => { logEl.textContent = "Cleared."; });
+
+    byId("btnLogin").addEventListener("click", () => safeRun("login", async () => {
+      const data = await api("POST", "/auth/login", { login: byId("login").value, password: byId("password").value });
+      byId("meInfo").textContent = `user: ${data.login} | authorities: ${(data.authorities || []).join(", ")}`;
+    }));
+    byId("btnRegister").addEventListener("click", () => safeRun("register", async () => {
+      const data = await api("POST", "/auth/register", { login: byId("login").value, password: byId("password").value });
+      byId("meInfo").textContent = `user: ${data.login} | authorities: ${(data.authorities || []).join(", ")}`;
+    }));
+    byId("btnMe").addEventListener("click", () => safeRun("me", async () => {
+      const data = await api("GET", "/auth/me");
+      byId("meInfo").textContent = `user: ${data.login} | authorities: ${(data.authorities || []).join(", ")}`;
+    }));
+    byId("btnLogout").addEventListener("click", () => safeRun("logout", async () => {
+      await api("POST", "/auth/logout");
+      byId("meInfo").textContent = "user: -";
+    }));
+
+    byId("btnReloadAttributes").addEventListener("click", () => safeRun("reload attributes", reloadAttributes));
+    byId("btnAttrCreate").addEventListener("click", () => safeRun("create attribute", async () => {
+      await api("POST", "/attributes/", { name: byId("attrName").value.trim() });
+      await Promise.all([reloadAttributes(), reloadOffers(), reloadQuestions(), reloadFlows()]);
+    }));
+    byId("btnAttrUpdate").addEventListener("click", () => safeRun("update attribute", async () => {
+      await api("PATCH", `/attributes/${Number(byId("attrId").value)}`, { name: byId("attrName").value.trim() });
+      await Promise.all([reloadAttributes(), reloadOffers(), reloadQuestions(), reloadFlows()]);
+    }));
+    byId("btnAttrDelete").addEventListener("click", () => safeRun("delete attribute", async () => {
+      await api("DELETE", `/attributes/${Number(byId("attrId").value)}`);
+      await Promise.all([reloadAttributes(), reloadOffers(), reloadQuestions(), reloadFlows()]);
+    }));
+    byId("attributesList").addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-action='edit-attr']");
+      if (!btn) return;
+      const id = Number(btn.dataset.id);
+      const attr = state.attributes.find(a => a.id === id);
+      if (!attr) return;
+      byId("attrId").value = String(attr.id);
+      byId("attrName").value = attr.name;
+    });
+
+    byId("btnAddAnswerRow").addEventListener("click", () => newAnswerRow());
+    byId("btnReloadQuestions").addEventListener("click", () => safeRun("reload questions", reloadQuestions));
+    byId("btnQuestionCreate").addEventListener("click", () => safeRun("create question", async () => {
+      const payload = {
+        text: byId("qText").value.trim(),
+        type: byId("qType").value,
+        requires: byId("qRequires").checked,
+        answers: collectAnswersFromEditor()
+      };
+      await api("POST", "/questions/", payload);
+      clearQuestionForm();
+      await Promise.all([reloadQuestions(), reloadFlows()]);
+    }));
+    byId("btnQuestionUpdate").addEventListener("click", () => safeRun("update question", async () => {
+      const id = Number(byId("qId").value);
+      const payload = {
+        text: byId("qText").value.trim(),
+        type: byId("qType").value,
+        requires: byId("qRequires").checked,
+        answers: collectAnswersFromEditor()
+      };
+      await api("PATCH", `/questions/${id}`, payload);
+      await Promise.all([reloadQuestions(), reloadFlows()]);
+    }));
+    byId("btnQuestionDelete").addEventListener("click", () => safeRun("delete question", async () => {
+      await api("DELETE", `/questions/${Number(byId("qId").value)}`);
+      clearQuestionForm();
+      await Promise.all([reloadQuestions(), reloadFlows()]);
+    }));
+    byId("questionsList").addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-action='edit-question']");
+      if (!btn) return;
+      const id = Number(btn.dataset.id);
+      const q = state.questions.find(item => item.id === id);
+      if (!q) return;
+      byId("qId").value = String(q.id);
+      byId("qText").value = q.text || "";
+      byId("qType").value = q.type || "singe_choise";
+      byId("qRequires").checked = !!q.requires;
+      byId("answersEditor").innerHTML = "";
+      (q.answers || []).forEach(a => newAnswerRow(a.text, a.attributes || []));
+      renderQuestionAnswerRows();
+    });
+
+    byId("btnReloadOffers").addEventListener("click", () => safeRun("reload offers", reloadOffers));
+    byId("btnOfferCreate").addEventListener("click", () => safeRun("create offer", async () => {
+      const payload = {
+        name: byId("offerName").value.trim(),
+        description: byId("offerDescription").value,
+        price: Number(byId("offerPrice").value),
+        priority: Number(byId("offerPriority").value || 0),
+        requires_all: parseCsvIds(byId("offerRequiresAll").value),
+        requires_optional: parseCsvIds(byId("offerRequiresOptional").value),
+        excludes: parseCsvIds(byId("offerExcludes").value)
+      };
+      await api("POST", "/offers/", payload);
+      await Promise.all([reloadOffers(), reloadFlows()]);
+    }));
+    byId("btnOfferUpdate").addEventListener("click", () => safeRun("update offer", async () => {
+      const id = Number(byId("offerId").value);
+      const payload = {
+        name: byId("offerName").value.trim(),
+        description: byId("offerDescription").value,
+        price: Number(byId("offerPrice").value),
+        priority: Number(byId("offerPriority").value || 0),
+        requires_all: parseCsvIds(byId("offerRequiresAll").value),
+        requires_optional: parseCsvIds(byId("offerRequiresOptional").value),
+        excludes: parseCsvIds(byId("offerExcludes").value)
+      };
+      await api("PATCH", `/offers/${id}`, payload);
+      await Promise.all([reloadOffers(), reloadFlows()]);
+    }));
+    byId("btnOfferDelete").addEventListener("click", () => safeRun("delete offer", async () => {
+      await api("DELETE", `/offers/${Number(byId("offerId").value)}`);
+      await Promise.all([reloadOffers(), reloadFlows()]);
+    }));
+    byId("btnOfferSelection").addEventListener("click", () => safeRun("offer selection", async () => {
+      await api("POST", "/offers/selection", {
+        attributes: parseCsvIds(byId("selectionAttrs").value),
+        limit: 5
+      });
+    }));
+    byId("offersList").addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-action='edit-offer']");
+      if (!btn) return;
+      const offer = state.offers.find(o => o.id === Number(btn.dataset.id));
+      if (!offer) return;
+      byId("offerId").value = String(offer.id);
+      byId("offerName").value = offer.name || "";
+      byId("offerDescription").value = offer.description || "";
+      byId("offerPrice").value = offer.price;
+      byId("offerPriority").value = offer.priority;
+      byId("offerRequiresAll").value = (offer.requires_all || []).join(",");
+      byId("offerRequiresOptional").value = (offer.requires_optional || []).join(",");
+      byId("offerExcludes").value = (offer.excludes || []).join(",");
+    });
+
+    byId("btnReloadUsers").addEventListener("click", () => safeRun("reload users", reloadUsers));
+    byId("btnUserCreate").addEventListener("click", () => safeRun("create user", async () => {
+      await api("POST", "/users/", {
+        login: byId("userLogin").value.trim(),
+        password: byId("userPassword").value,
+        authorities: byId("userAuthorities").value.split(",").map(a => a.trim()).filter(Boolean)
+      });
+      await reloadUsers();
+    }));
+    byId("btnUserUpdate").addEventListener("click", () => safeRun("update user", async () => {
+      const payload = {
+        login: byId("userLogin").value.trim() || undefined,
+        password: byId("userPassword").value || undefined,
+        authorities: byId("userAuthorities").value.split(",").map(a => a.trim()).filter(Boolean)
+      };
+      await api("PATCH", `/users/${Number(byId("userId").value)}`, payload);
+      await reloadUsers();
+    }));
+    byId("btnUserDelete").addEventListener("click", () => safeRun("delete user", async () => {
+      await api("DELETE", `/users/${Number(byId("userId").value)}`);
+      await reloadUsers();
+    }));
+    byId("usersList").addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-action='edit-user']");
+      if (!btn) return;
+      const user = state.users.find(u => u.id === Number(btn.dataset.id));
+      if (!user) return;
+      byId("userId").value = String(user.id);
+      byId("userLogin").value = user.login || "";
+      byId("userPassword").value = "";
+      byId("userAuthorities").value = (user.authorities || []).join(",");
+    });
+
+    byId("btnReloadFlows").addEventListener("click", () => safeRun("reload flows", reloadFlows));
+    byId("btnNewFlow").addEventListener("click", () => newFlowDraft());
+    byId("flowSelect").addEventListener("change", async () => safeRun("load flow", async () => {
+      const id = Number(byId("flowSelect").value);
+      if (!id) {
+        newFlowDraft();
+        return;
+      }
+      const flow = await api("GET", `/flows/${id}`);
+      loadFlowIntoDraft(flow);
+      await loadHistory();
+    }));
+    byId("flowName").addEventListener("input", syncFlowDraftHeader);
+    byId("flowIsActive").addEventListener("change", syncFlowDraftHeader);
+    byId("btnLoadActiveFlow").addEventListener("click", () => safeRun("load active flow", async () => {
+      const flow = await api("GET", "/flows/active");
+      loadFlowIntoDraft(flow);
+      await loadHistory();
+    }));
+    byId("btnSaveFlow").addEventListener("click", () => safeRun("save flow", async () => {
+      const payload = collectFlowPayload();
+      if (state.flowDraft.id) {
+        const updated = await api("PATCH", `/flows/${state.flowDraft.id}`, payload);
+        loadFlowIntoDraft(updated);
+      } else {
+        const created = await api("POST", "/flows/", payload);
+        loadFlowIntoDraft(created);
+      }
+      await reloadFlows();
+      await loadHistory();
+    }));
+    byId("btnDeleteFlow").addEventListener("click", () => safeRun("delete flow", async () => {
+      if (!state.flowDraft.id) throw new Error("Pick existing flow first");
+      await api("DELETE", `/flows/${state.flowDraft.id}`);
+      await reloadFlows();
+      newFlowDraft();
+    }));
+    byId("btnAddTransition").addEventListener("click", () => {
+      state.flowDraft.transitions.push(transitionTemplate());
+      renderTransitions();
+    });
+    byId("btnReloadHistory").addEventListener("click", () => safeRun("reload history", loadHistory));
+
+    byId("btnResolveNextSelected").addEventListener("click", () => safeRun("resolve next selected", async () => {
+      if (!state.flowDraft.id) throw new Error("Pick flow first");
+      await api("POST", `/flows/${state.flowDraft.id}/next`, {
+        current_question_id: Number(byId("runnerQuestion").value),
+        selected_answer_ids: parseCsvIds(byId("runnerAnswers").value)
+      });
+    }));
+    byId("btnResolveNextActive").addEventListener("click", () => safeRun("resolve next active", async () => {
+      await api("POST", "/flows/active/next", {
+        current_question_id: Number(byId("runnerQuestion").value),
+        selected_answer_ids: parseCsvIds(byId("runnerAnswers").value)
+      });
+    }));
+
+    byId("flowPath").addEventListener("click", (event) => {
+      const removeBtn = event.target.closest(".btn-remove-q");
+      if (!removeBtn) return;
+      const index = Number(removeBtn.dataset.index);
+      state.flowDraft.question_ids.splice(index, 1);
+      validateTransitionsForDraft();
+      renderFlowPath();
+      renderTransitions();
+      renderAnswerBank();
+      renderRunnerOptions();
+    });
+
+    byId("transitionsList").addEventListener("input", (event) => {
+      const from = event.target.closest(".tr-from");
+      const to = event.target.closest(".tr-to");
+      const cond = event.target.closest(".tr-condition");
+      const pri = event.target.closest(".tr-priority");
+      if (from) {
+        const idx = Number(from.dataset.index);
+        state.flowDraft.transitions[idx].from_question_id = Number(from.value);
+        validateTransitionsForDraft();
+        renderTransitions();
+      } else if (to) {
+        const idx = Number(to.dataset.index);
+        state.flowDraft.transitions[idx].to_question_id = to.value ? Number(to.value) : null;
+      } else if (cond) {
+        const idx = Number(cond.dataset.index);
+        state.flowDraft.transitions[idx].condition_type = cond.value;
+        if (cond.value === "always") {
+          state.flowDraft.transitions[idx].answer_ids = [];
+        }
+        renderTransitions();
+      } else if (pri) {
+        const idx = Number(pri.dataset.index);
+        state.flowDraft.transitions[idx].priority = Number(pri.value || 100);
+      }
+    });
+
+    byId("transitionsList").addEventListener("click", (event) => {
+      const del = event.target.closest(".btn-remove-transition");
+      if (del) {
+        const idx = Number(del.dataset.index);
+        state.flowDraft.transitions.splice(idx, 1);
+        renderTransitions();
+        return;
+      }
+      const unlink = event.target.closest(".btn-unlink-answer");
+      if (unlink) {
+        const idx = Number(unlink.dataset.tidx);
+        const aid = Number(unlink.dataset.aid);
+        state.flowDraft.transitions[idx].answer_ids = state.flowDraft.transitions[idx].answer_ids.filter(id => id !== aid);
+        renderTransitions();
+      }
+    });
+
+    byId("historyList").addEventListener("click", (event) => {
+      const btn = event.target.closest(".btn-rollback");
+      if (!btn) return;
+      safeRun("rollback", async () => {
+        if (!state.flowDraft.id) throw new Error("Select flow first");
+        const rev = Number(btn.dataset.rev);
+        const flow = await api("POST", `/flows/${state.flowDraft.id}/rollback/${rev}`);
+        loadFlowIntoDraft(flow);
+        await reloadFlows();
+        await loadHistory();
+      });
+    });
+
+    document.addEventListener("dragstart", (event) => {
+      const q = event.target.closest("[data-drag-type='question-bank']");
+      if (q) {
+        event.dataTransfer.setData("text/plain", JSON.stringify({
+          type: "question-bank",
+          questionId: Number(q.dataset.questionId)
+        }));
+        return;
+      }
+
+      const p = event.target.closest("[data-drag-type='flow-path']");
+      if (p) {
+        event.dataTransfer.setData("text/plain", JSON.stringify({
+          type: "flow-path",
+          index: Number(p.dataset.index)
+        }));
+        return;
+      }
+
+      const a = event.target.closest("[data-drag-type='answer-chip']");
+      if (a) {
+        event.dataTransfer.setData("text/plain", JSON.stringify({
+          type: "answer-chip",
+          answerId: Number(a.dataset.answerId),
+          questionId: Number(a.dataset.questionId)
+        }));
+      }
+    });
+
+    byId("flowPath").addEventListener("dragover", event => {
+      event.preventDefault();
+      byId("flowPath").classList.add("over");
+    });
+    byId("flowPath").addEventListener("dragleave", () => {
+      byId("flowPath").classList.remove("over");
+    });
+    byId("flowPath").addEventListener("drop", event => {
+      event.preventDefault();
+      byId("flowPath").classList.remove("over");
+      let data = null;
+      try {
+        data = JSON.parse(event.dataTransfer.getData("text/plain"));
+      } catch (_) {
+        return;
+      }
+      if (!data) return;
+
+      if (data.type === "question-bank") {
+        if (!state.flowDraft.question_ids.includes(data.questionId)) {
+          state.flowDraft.question_ids.push(data.questionId);
+          renderFlowPath();
+          renderAnswerBank();
+          renderTransitions();
+          renderRunnerOptions();
+        }
+      } else if (data.type === "flow-path") {
+        const targetItem = event.target.closest(".path-item");
+        const fromIdx = Number(data.index);
+        const toIdx = targetItem ? Number(targetItem.dataset.index) : state.flowDraft.question_ids.length - 1;
+        if (Number.isFinite(fromIdx) && Number.isFinite(toIdx) && fromIdx !== toIdx) {
+          const copy = [...state.flowDraft.question_ids];
+          const [moved] = copy.splice(fromIdx, 1);
+          copy.splice(toIdx, 0, moved);
+          state.flowDraft.question_ids = copy;
+          validateTransitionsForDraft();
+          renderFlowPath();
+          renderTransitions();
+          renderAnswerBank();
+          renderRunnerOptions();
+        }
+      }
+    });
+
+    byId("transitionsList").addEventListener("dragover", event => {
+      const zone = event.target.closest(".tr-answer-drop");
+      if (!zone) return;
+      event.preventDefault();
+      zone.classList.add("over");
+    });
+    byId("transitionsList").addEventListener("dragleave", event => {
+      const zone = event.target.closest(".tr-answer-drop");
+      if (!zone) return;
+      zone.classList.remove("over");
+    });
+    byId("transitionsList").addEventListener("drop", event => {
+      const zone = event.target.closest(".tr-answer-drop");
+      if (!zone) return;
+      event.preventDefault();
+      zone.classList.remove("over");
+      let data = null;
+      try {
+        data = JSON.parse(event.dataTransfer.getData("text/plain"));
+      } catch (_) {
+        return;
+      }
+      if (!data || data.type !== "answer-chip") return;
+      const idx = Number(zone.dataset.index);
+      const transition = state.flowDraft.transitions[idx];
+      if (!transition) return;
+      if (!transition.from_question_id) {
+        alert("Set from_question first.");
+        return;
+      }
+      if (Number(transition.from_question_id) !== Number(data.questionId)) {
+        alert("This answer belongs to another question than transition.from_question.");
+        return;
+      }
+      if (transition.condition_type === "always") {
+        alert("Switch condition from 'always' to answer_any/answer_all first.");
+        return;
+      }
+      if (!transition.answer_ids.includes(data.answerId)) {
+        transition.answer_ids.push(data.answerId);
+      }
+      renderTransitions();
+    });
+  }
+
+  async function boot() {
+    initEvents();
+    newAnswerRow();
+    renderQuestionBank();
+    renderFlowPath();
+    renderAnswerBank();
+    renderTransitions();
+    await safeRun("bootstrap load", reloadAll);
+  }
+
+  boot();
+</script>
+</body>
+</html>
