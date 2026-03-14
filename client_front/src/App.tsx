@@ -7,6 +7,7 @@ import WithHeader from "@/layouts/WithHeader";
 import Blank from "@/layouts/Blank";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import ErrorPage from "@/pages/ErrorPage/ErrorPage";
+import NotFoundPage from "./pages/NotFoundPage/NotFoundPage";
 
 export default function App() {
   return (
@@ -20,7 +21,7 @@ export default function App() {
           <Route element={<Blank />}>
             <Route path="/quiz" element={<QuizPage />} />
           </Route>
-          <Route path="*" element={<ErrorPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </ErrorBoundary>
     </BrowserRouter>
