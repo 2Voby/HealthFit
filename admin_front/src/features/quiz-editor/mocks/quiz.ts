@@ -84,7 +84,7 @@ export const MOCK_QUIZ: QuizGraph & { quizId: string; quizName: string } = {
       sourceHandle: a1,
       target: 'q2',
       type: 'conditional',
-      data: { conditionType: 'always', answerIds: [], priority: 100 },
+      data: {},
     },
     {
       id: 'e2',
@@ -92,7 +92,7 @@ export const MOCK_QUIZ: QuizGraph & { quizId: string; quizName: string } = {
       sourceHandle: a2,
       target: 'info1',
       type: 'conditional',
-      data: { conditionType: 'always', answerIds: [], priority: 100 },
+      data: {},
     },
     {
       id: 'e3',
@@ -100,7 +100,7 @@ export const MOCK_QUIZ: QuizGraph & { quizId: string; quizName: string } = {
       sourceHandle: a3,
       target: 'offer5',
       type: 'conditional',
-      data: { conditionType: 'always', answerIds: [], priority: 100 },
+      data: {},
     },
     {
       id: 'e4',
@@ -108,14 +108,14 @@ export const MOCK_QUIZ: QuizGraph & { quizId: string; quizName: string } = {
       sourceHandle: 'a4-home',
       target: 'offer1',
       type: 'conditional',
-      data: { conditionType: 'answer_any', answerIds: ['a4-home'], priority: 100 },
+      data: {},
     },
     {
       id: 'e5',
       source: 'info1',
       target: 'offer5',
       type: 'conditional',
-      data: { conditionType: 'always', answerIds: [], priority: 100 },
+      data: {},
     },
   ],
 }
