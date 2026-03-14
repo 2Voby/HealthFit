@@ -28,7 +28,6 @@ async def resolve_authorities(authority_names: list[str]) -> list[Authority]:
 async def list_users(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
-    _: User = Depends(require_authority("read_users")),
 ) -> UsersListResponse:
     total = await User.all().count()
     users = await User.all().offset(offset).limit(limit).prefetch_related("authorities")
@@ -41,7 +40,6 @@ async def list_users(
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(
     user_id: int,
-    _: User = Depends(require_authority("read_users")),
 ) -> UserResponse:
     user = await User.get_or_none(id=user_id).prefetch_related("authorities")
     if user is None:
@@ -52,7 +50,7 @@ async def get_user(
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     payload: UserCreateRequest,
-    _: User = Depends(require_authority("edit_users")),
+    _: User = Depends(require_authority("edit_elements")),
 ) -> UserResponse:
     existing = await User.get_or_none(login=payload.login)
     if existing:
@@ -77,7 +75,7 @@ async def create_user(
 async def update_user(
     user_id: int,
     payload: UserUpdateRequest,
-    _: User = Depends(require_authority("edit_users")),
+    _: User = Depends(require_authority("edit_elements")),
 ) -> UserResponse:
     user = await User.get_or_none(id=user_id).prefetch_related("authorities")
     if user is None:
@@ -109,7 +107,7 @@ async def update_user(
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
     user_id: int,
-    _: User = Depends(require_authority("edit_users")),
+    _: User = Depends(require_authority("edit_elements")),
 ) -> None:
     user = await User.get_or_none(id=user_id)
     if user is None:

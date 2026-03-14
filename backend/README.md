@@ -27,10 +27,16 @@ Swagger UI:
 ## Authorities
 - `read_users`
 - `edit_users`
+- `edit_elements`
 
-Protected users CRUD:
-- `GET /v1/users`, `GET /v1/users/{id}` require `read_users`
-- `POST /v1/users`, `PATCH /v1/users/{id}`, `DELETE /v1/users/{id}` require `edit_users`
+Access rules:
+- All `GET` endpoints for `users`, `attributes`, `questions`, `offers` are public (no auth).
+- All `POST`, `PATCH`, `DELETE` endpoints for `users`, `attributes`, `questions`, `offers` require `edit_elements`.
+
+Additional CRUD:
+- `GET/POST/PATCH/DELETE /v1/attributes`
+- `GET/POST/PATCH/DELETE /v1/questions`
+- `GET/POST/PATCH/DELETE /v1/offers`
 
 ## Bootstrap
 On startup app creates authorities from `BOOTSTRAP_AUTHORITIES_CSV`.
