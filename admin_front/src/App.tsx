@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { QuizEditorPage } from '@/features/quiz-editor/pages/QuizEditorPage'
 
 function HomePage() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/quiz/:quizId/edit" element={<QuizEditorPage />} />
       </Routes>
     </BrowserRouter>
   )

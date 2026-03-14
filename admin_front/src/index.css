@@ -1,3 +1,5 @@
+@import '@xyflow/react/dist/style.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -56,4 +58,28 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%
   }
+}
+
+/* React Flow handle styling */
+.react-flow__handle {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid hsl(var(--background));
+}
+
+.react-flow__handle-right {
+  right: -5px;
+}
+
+.react-flow__handle-top {
+  top: -5px;
+}
+
+.react-flow__handle-bottom {
+  bottom: -5px;
+}
+
+.react-flow__node {
+  font-family: inherit;
 }
