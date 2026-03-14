@@ -289,14 +289,6 @@ async def create_offer(
             detail="Offer with this name already exists",
         )
 
-    offer = await Offer.create(
-        name=payload.name,
-        description=payload.description,
-        price=payload.price,
-        is_default=payload.default,
-        priority=payload.priority,
-    )
-
     normalized_requires_all, normalized_requires_optional, normalized_excludes = normalize_offer_constraints(
         payload.requires_all,
         payload.requires_optional,
@@ -306,6 +298,14 @@ async def create_offer(
     requires_all_attributes = await resolve_attributes(normalized_requires_all)
     requires_optional_attributes = await resolve_attributes(normalized_requires_optional)
     excludes_attributes = await resolve_attributes(normalized_excludes)
+
+    offer = await Offer.create(
+        name=payload.name,
+        description=payload.description,
+        price=payload.price,
+        is_default=payload.default,
+        priority=payload.priority,
+    )
 
     if requires_all_attributes:
         await offer.requires_all.add(*requires_all_attributes)
