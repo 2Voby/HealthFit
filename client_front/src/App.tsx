@@ -5,19 +5,24 @@ import QuizPage from "@/pages/QuizPage/QuizPage";
 import ResultPage from "@/pages/ResultPage/ResultPage";
 import WithHeader from "@/layouts/WithHeader";
 import Blank from "@/layouts/Blank";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
+import ErrorPage from "@/pages/ErrorPage/ErrorPage";
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route element={<WithHeader />}>
-          <Route path="/" element={<MainPage />} />
-          <Route path="/result" element={<ResultPage />} />
-        </Route>
-        <Route element={<Blank />}>
-          <Route path="/quiz" element={<QuizPage />} />
-        </Route>
-      </Routes>
+      <ErrorBoundary fallback={<ErrorPage />}>
+        <Routes>
+          <Route element={<WithHeader />}>
+            <Route path="/" element={<MainPage />} />
+            <Route path="/result" element={<ResultPage />} />
+          </Route>
+          <Route element={<Blank />}>
+            <Route path="/quiz" element={<QuizPage />} />
+          </Route>
+          <Route path="*" element={<ErrorPage />} />
+        </Routes>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

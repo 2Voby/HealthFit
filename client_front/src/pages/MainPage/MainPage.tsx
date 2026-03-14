@@ -28,7 +28,6 @@ function PerkCard({ icon, text }: { icon: string; text: string }) {
 export default function MainPage() {
 	const navigate = useNavigate();
 	const doubled = [...perks, ...perks];
-
 	return (
 		<div className="min-h-screen bg-white flex flex-col">
 			<style>{`
