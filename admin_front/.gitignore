@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+.claude/settings.local.json
+test-results
+test-screenshots
