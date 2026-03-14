@@ -1,6 +1,17 @@
 from src.core.config import Settings
 from src.core.security import hash_password
-from src.models import Attribute, Authority, Flow, FlowQuestion, Offer, Question, QuestionAnswer, User
+from src.models import (
+    Attribute,
+    Authority,
+    Flow,
+    FlowQuestion,
+    FlowTransition,
+    FlowTransitionAnswer,
+    Offer,
+    Question,
+    QuestionAnswer,
+    User,
+)
 
 
 async def bootstrap_authorities(settings: Settings) -> None:
@@ -55,22 +66,24 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type: str,
         requires: bool,
         answers: list[tuple[str, list[str]]],
-    ) -> Question:
+    ) -> tuple[Question, dict[str, QuestionAnswer]]:
         question = await Question.create(
             text=text,
             type=question_type,
             requires=requires,
         )
+        created_answers: dict[str, QuestionAnswer] = {}
         for answer_text, answer_attribute_names in answers:
             answer = await QuestionAnswer.create(
                 question=question,
                 text=answer_text,
             )
+            created_answers[answer_text] = answer
             if answer_attribute_names:
                 await answer.attributes.add(*(attributes_by_name[name] for name in answer_attribute_names))
-        return question
+        return question, created_answers
 
-    q_goal = await create_question_with_answers(
+    q_goal, _ = await create_question_with_answers(
         text="Яка ваша головна ціль?",
         question_type="singe_choise",
         requires=True,
@@ -82,7 +95,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Витривалість", ["goal_endurance"]),
         ],
     )
-    q_context = await create_question_with_answers(
+    q_context, q_context_answers = await create_question_with_answers(
         text="Де вам зручніше займатися?",
         question_type="singe_choise",
         requires=True,
@@ -92,7 +105,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("На вулиці", ["context_outdoor"]),
         ],
     )
-    q_time = await create_question_with_answers(
+    q_time, _ = await create_question_with_answers(
         text="Скільки часу на день?",
         question_type="singe_choise",
         requires=False,
@@ -101,7 +114,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("20–30 хв", ["time_20_30"]),
         ],
     )
-    q_injury = await create_question_with_answers(
+    q_injury, _ = await create_question_with_answers(
         text="Чи є травми?",
         question_type="singe_choise",
         requires=False,
@@ -110,7 +123,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Немає", ["injury_none"]),
         ],
     )
-    q_stress = await create_question_with_answers(
+    q_stress, _ = await create_question_with_answers(
         text="Ваш рівень стресу?",
         question_type="singe_choise",
         requires=True,
@@ -218,3 +231,58 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             question=question,
             position=position,
         )
+
+    context_home_answer = q_context_answers["Вдома"]
+    context_gym_answer = q_context_answers["У залі"]
+    context_outdoor_answer = q_context_answers["На вулиці"]
+
+    await FlowTransition.create(
+        flow=flow,
+        from_question=q_goal,
+        to_question=q_context,
+        condition_type="always",
+        priority=10,
+    )
+
+    transition_context_to_time = await FlowTransition.create(
+        flow=flow,
+        from_question=q_context,
+        to_question=q_time,
+        condition_type="answer_any",
+        priority=10,
+    )
+    await FlowTransitionAnswer.create(transition=transition_context_to_time, answer=context_home_answer)
+
+    transition_context_to_injury = await FlowTransition.create(
+        flow=flow,
+        from_question=q_context,
+        to_question=q_injury,
+        condition_type="answer_any",
+        priority=20,
+    )
+    await FlowTransitionAnswer.create(transition=transition_context_to_injury, answer=context_gym_answer)
+
+    transition_context_to_stress = await FlowTransition.create(
+        flow=flow,
+        from_question=q_context,
+        to_question=q_stress,
+        condition_type="answer_any",
+        priority=30,
+    )
+    await FlowTransitionAnswer.create(transition=transition_context_to_stress, answer=context_outdoor_answer)
+
+    await FlowTransition.create(
+        flow=flow,
+        from_question=q_time,
+        to_question=q_stress,
+        condition_type="always",
+        priority=10,
+    )
+
+    await FlowTransition.create(
+        flow=flow,
+        from_question=q_injury,
+        to_question=q_stress,
+        condition_type="always",
+        priority=10,
+    )

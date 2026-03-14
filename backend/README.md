@@ -33,7 +33,7 @@ Swagger UI:
 Access rules:
 - All `GET` endpoints for `users`, `attributes`, `questions`, `offers` are public (no auth).
 - All `POST`, `PATCH`, `DELETE` endpoints for `users`, `attributes`, `questions`, `offers` require `edit_elements`.
-- Exception: `POST /v1/offers/selection` is public for user-facing flow.
+- Exceptions (public, no auth): `POST /v1/offers/selection`, `POST /v1/flows/active/next`, `POST /v1/flows/{id}/next`.
 
 Additional CRUD:
 - `GET/POST/PATCH/DELETE /v1/attributes`
@@ -48,6 +48,21 @@ Offer selection:
 Active flow:
 - `GET /v1/flows/active` returns only active flow with ordered questions and answers.
 - Flow has `is_active`, and when one flow is activated via create/update, others are deactivated automatically.
+- Flow also supports branching transitions configured by answer ids:
+  - `condition_type`: `always | answer_any | answer_all`
+  - `from_question_id` -> `to_question_id` (nullable for flow end)
+  - `answer_ids` are required for `answer_any/answer_all` and must belong to `from_question_id`.
+- `POST/PATCH /v1/flows` payload example:
+  - `question_ids`: ordered list of questions in flow
+  - `transitions`: list of transition rules
+  - Example transition:
+    - `{ "from_question_id": 2, "to_question_id": 3, "condition_type": "answer_any", "answer_ids": [11], "priority": 10 }`
+- Next-step resolution:
+  - `POST /v1/flows/active/next` or `POST /v1/flows/{id}/next`
+  - Request:
+    - `{ "current_question_id": 2, "selected_answer_ids": [11] }`
+  - Response:
+    - `matched_transition_id`, `next_question_id`, `is_finished`, `next_question`
 
 ## Bootstrap
 On startup app creates authorities from `BOOTSTRAP_AUTHORITIES_CSV`.

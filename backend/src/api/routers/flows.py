@@ -1,11 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src.api.deps import require_authority
-from src.models import Flow, FlowQuestion, Question, QuestionAnswer, User
+from src.models import Flow, FlowQuestion, FlowTransition, FlowTransitionAnswer, Question, QuestionAnswer, User
 from src.schemas.flow import (
     FlowCreateRequest,
     FlowQuestionResponse,
+    FlowResolveNextRequest,
+    FlowResolveNextResponse,
     FlowResponse,
+    FlowTransitionCondition,
+    FlowTransitionCreateRequest,
+    FlowTransitionResponse,
     FlowsListResponse,
     FlowUpdateRequest,
 )
@@ -18,6 +23,12 @@ def question_type_value(question_type: object) -> str:
     if hasattr(question_type, "value"):
         return str(getattr(question_type, "value"))
     return str(question_type)
+
+
+def transition_condition_value(condition_type: object) -> str:
+    if hasattr(condition_type, "value"):
+        return str(getattr(condition_type, "value"))
+    return str(condition_type)
 
 
 async def to_question_response(question: Question) -> QuestionResponse:
@@ -68,6 +79,38 @@ async def resolve_questions_by_ids(question_ids: list[int]) -> dict[int, Questio
     return question_map
 
 
+async def resolve_answers_by_ids(answer_ids: list[int]) -> dict[int, QuestionAnswer]:
+    if not answer_ids:
+        return {}
+
+    if len(set(answer_ids)) != len(answer_ids):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="answer_ids must contain unique values",
+        )
+
+    unique_ids = sorted(set(answer_ids))
+    answers = await QuestionAnswer.filter(id__in=unique_ids)
+    answer_map = {answer.id: answer for answer in answers}
+    missing_ids = [answer_id for answer_id in unique_ids if answer_id not in answer_map]
+    if missing_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unknown answer ids: {', '.join(map(str, missing_ids))}",
+        )
+    return answer_map
+
+
+def normalize_unique_ids(ids: list[int]) -> list[int]:
+    return sorted(set(ids))
+
+
+async def get_flow_question_map(flow: Flow) -> dict[int, Question]:
+    flow_questions = await FlowQuestion.filter(flow=flow).order_by("position")
+    question_ids = [item.question_id for item in flow_questions]
+    return await resolve_questions_by_ids(question_ids)
+
+
 async def set_flow_questions(
     flow: Flow,
     question_ids: list[int],
@@ -85,9 +128,168 @@ async def set_flow_questions(
         )
 
 
+def validate_transition_payload(payload: FlowTransitionCreateRequest) -> None:
+    if payload.condition_type == FlowTransitionCondition.always and payload.answer_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="answer_ids must be empty when condition_type is always",
+        )
+    if payload.condition_type in {FlowTransitionCondition.answer_any, FlowTransitionCondition.answer_all}:
+        if not payload.answer_ids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="answer_ids are required for answer_any and answer_all conditions",
+            )
+
+
+async def set_flow_transitions(
+    flow: Flow,
+    transitions: list[FlowTransitionCreateRequest],
+    question_map: dict[int, Question],
+) -> None:
+    prepared_transitions: list[tuple[FlowTransitionCreateRequest, list[QuestionAnswer]]] = []
+
+    for transition_payload in transitions:
+        validate_transition_payload(transition_payload)
+
+        from_question = question_map.get(transition_payload.from_question_id)
+        if from_question is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"from_question_id {transition_payload.from_question_id} is not part of this flow",
+            )
+
+        if transition_payload.to_question_id is not None and transition_payload.to_question_id not in question_map:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"to_question_id {transition_payload.to_question_id} is not part of this flow",
+            )
+
+        answer_map = await resolve_answers_by_ids(transition_payload.answer_ids)
+        for answer in answer_map.values():
+            if answer.question_id != transition_payload.from_question_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        f"Answer {answer.id} does not belong to from_question_id "
+                        f"{transition_payload.from_question_id}"
+                    ),
+                )
+        prepared_transitions.append((transition_payload, list(answer_map.values())))
+
+    await FlowTransition.filter(flow=flow).delete()
+
+    for transition_payload, answers in prepared_transitions:
+        transition = await FlowTransition.create(
+            flow=flow,
+            from_question_id=transition_payload.from_question_id,
+            to_question_id=transition_payload.to_question_id,
+            condition_type=transition_payload.condition_type.value,
+            priority=transition_payload.priority,
+        )
+        for answer in answers:
+            await FlowTransitionAnswer.create(
+                transition=transition,
+                answer=answer,
+            )
+
+
 async def ensure_only_one_active(active_flow_id: int) -> None:
     await Flow.all().update(is_active=False)
     await Flow.filter(id=active_flow_id).update(is_active=True)
+
+
+def transition_matches(
+    condition_type: str,
+    transition_answer_ids: set[int],
+    selected_answer_ids: set[int],
+) -> bool:
+    if condition_type == FlowTransitionCondition.always.value:
+        return True
+    if condition_type == FlowTransitionCondition.answer_any.value:
+        return any(answer_id in selected_answer_ids for answer_id in transition_answer_ids)
+    if condition_type == FlowTransitionCondition.answer_all.value:
+        return transition_answer_ids.issubset(selected_answer_ids)
+    return False
+
+
+async def resolve_next_for_flow(
+    flow: Flow,
+    payload: FlowResolveNextRequest,
+) -> FlowResolveNextResponse:
+    question_map = await get_flow_question_map(flow)
+    current_question = question_map.get(payload.current_question_id)
+    if current_question is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"current_question_id {payload.current_question_id} is not part of this flow",
+        )
+
+    selected_answer_ids = normalize_unique_ids(payload.selected_answer_ids)
+    if len(selected_answer_ids) != len(payload.selected_answer_ids):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="selected_answer_ids must contain unique values",
+        )
+
+    current_question_type = question_type_value(current_question.type)
+    if current_question_type == "manual_input" and selected_answer_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="manual_input question must not contain selected_answer_ids",
+        )
+    if current_question_type == "singe_choise" and len(selected_answer_ids) > 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="singe_choise question accepts at most one selected answer",
+        )
+
+    selected_answer_map = await resolve_answers_by_ids(selected_answer_ids)
+    for answer in selected_answer_map.values():
+        if answer.question_id != current_question.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Answer {answer.id} does not belong to current_question_id {current_question.id}",
+            )
+
+    transitions = await FlowTransition.filter(
+        flow=flow,
+        from_question_id=current_question.id,
+    ).order_by("priority", "id")
+    transition_ids = [transition.id for transition in transitions]
+    answer_rows = []
+    if transition_ids:
+        answer_rows = await FlowTransitionAnswer.filter(transition_id__in=transition_ids).order_by(
+            "transition_id",
+            "answer_id",
+        )
+
+    transition_answers_map: dict[int, set[int]] = {}
+    for row in answer_rows:
+        transition_answers_map.setdefault(row.transition_id, set()).add(row.answer_id)
+
+    selected_answer_ids_set = set(selected_answer_ids)
+    matched_transition: FlowTransition | None = None
+    for transition in transitions:
+        condition_type = transition_condition_value(transition.condition_type)
+        transition_answer_ids = transition_answers_map.get(transition.id, set())
+        if transition_matches(condition_type, transition_answer_ids, selected_answer_ids_set):
+            matched_transition = transition
+            break
+
+    next_question_id = matched_transition.to_question_id if matched_transition else None
+    next_question = question_map.get(next_question_id) if next_question_id is not None else None
+    is_finished = next_question_id is None
+
+    return FlowResolveNextResponse(
+        flow_id=flow.id,
+        current_question_id=current_question.id,
+        selected_answer_ids=selected_answer_ids,
+        matched_transition_id=matched_transition.id if matched_transition else None,
+        next_question_id=next_question_id,
+        is_finished=is_finished,
+        next_question=await to_question_response(next_question) if next_question is not None else None,
+    )
 
 
 async def to_flow_response(flow: Flow) -> FlowResponse:
@@ -110,11 +312,31 @@ async def to_flow_response(flow: Flow) -> FlowResponse:
             )
         )
 
+    transitions = await FlowTransition.filter(flow=flow).order_by("from_question_id", "priority", "id")
+    response_transitions: list[FlowTransitionResponse] = []
+    for transition in transitions:
+        transition_answer_rows = await FlowTransitionAnswer.filter(transition=transition).order_by("answer_id")
+        response_transitions.append(
+            FlowTransitionResponse(
+                id=transition.id,
+                from_question_id=transition.from_question_id,
+                to_question_id=transition.to_question_id,
+                condition_type=transition_condition_value(transition.condition_type),
+                answer_ids=[row.answer_id for row in transition_answer_rows],
+                priority=transition.priority,
+                created_at=transition.created_at,
+                updated_at=transition.updated_at,
+            )
+        )
+
+    start_question_id = flow_questions[0].question_id if flow_questions else None
     return FlowResponse(
         id=flow.id,
         name=flow.name,
         is_active=flow.is_active,
+        start_question_id=start_question_id,
         questions=response_questions,
+        transitions=response_transitions,
         created_at=flow.created_at,
         updated_at=flow.updated_at,
     )
@@ -149,6 +371,22 @@ async def get_flow(flow_id: int) -> FlowResponse:
     return await to_flow_response(flow)
 
 
+@router.post("/active/next", response_model=FlowResolveNextResponse)
+async def resolve_active_flow_next(payload: FlowResolveNextRequest) -> FlowResolveNextResponse:
+    flow = await Flow.filter(is_active=True).first()
+    if flow is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Active flow not found")
+    return await resolve_next_for_flow(flow=flow, payload=payload)
+
+
+@router.post("/{flow_id}/next", response_model=FlowResolveNextResponse)
+async def resolve_flow_next(flow_id: int, payload: FlowResolveNextRequest) -> FlowResolveNextResponse:
+    flow = await Flow.get_or_none(id=flow_id)
+    if flow is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flow not found")
+    return await resolve_next_for_flow(flow=flow, payload=payload)
+
+
 @router.post("/", response_model=FlowResponse, status_code=status.HTTP_201_CREATED)
 async def create_flow(
     payload: FlowCreateRequest,
@@ -167,11 +405,8 @@ async def create_flow(
         is_active=payload.is_active,
     )
 
-    await set_flow_questions(
-        flow=flow,
-        question_ids=payload.question_ids,
-        question_map=question_map,
-    )
+    await set_flow_questions(flow=flow, question_ids=payload.question_ids, question_map=question_map)
+    await set_flow_transitions(flow=flow, transitions=payload.transitions, question_map=question_map)
 
     if flow.is_active:
         await ensure_only_one_active(flow.id)
@@ -198,21 +433,27 @@ async def update_flow(
             )
         flow.name = payload.name
 
-    if payload.is_active is not None:
-        flow.is_active = payload.is_active
+    question_map = await get_flow_question_map(flow)
+    if payload.question_ids is not None:
+        question_map = await resolve_questions_by_ids(payload.question_ids)
+        await set_flow_questions(flow=flow, question_ids=payload.question_ids, question_map=question_map)
+        if payload.transitions is None:
+            # If question set changed and transitions are not provided, clear branches to avoid stale paths.
+            await FlowTransition.filter(flow=flow).delete()
 
-    if flow.is_active:
-        await ensure_only_one_active(flow.id)
+    if payload.transitions is not None:
+        await set_flow_transitions(flow=flow, transitions=payload.transitions, question_map=question_map)
+
+    if payload.is_active is False:
+        flow.is_active = False
+    elif payload.is_active is True:
+        flow.is_active = True
 
     await flow.save()
 
-    if payload.question_ids is not None:
-        question_map = await resolve_questions_by_ids(payload.question_ids)
-        await set_flow_questions(
-            flow=flow,
-            question_ids=payload.question_ids,
-            question_map=question_map,
-        )
+    if flow.is_active:
+        await ensure_only_one_active(flow.id)
+        flow.is_active = True
 
     return await to_flow_response(flow)
 
