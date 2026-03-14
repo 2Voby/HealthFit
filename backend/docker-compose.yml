@@ -12,7 +12,7 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - "8000:8000"
+      - "18247:8000"
     volumes:
       - ./src:/app/src
     restart: unless-stopped
@@ -25,7 +25,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-app}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
     ports:
-      - "5432:5432"
+      - "15429:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -39,7 +39,7 @@ services:
     image: redis:7-alpine
     container_name: users_redis
     ports:
-      - "6379:6379"
+      - "16371:6379"
     volumes:
       - redis_data:/data
     healthcheck:

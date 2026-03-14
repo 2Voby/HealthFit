@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API Playground</title>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --surface: #ffffff;
+      --text: #1f2a3a;
+      --muted: #627089;
+      --line: #dbe4f1;
+      --primary: #1769ff;
+      --danger: #dc3545;
+      --ok: #0a9f6e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(circle at top right, #e8f0ff 0%, var(--bg) 45%);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .hero, .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 10px 20px rgba(17, 24, 39, 0.05);
+    }
+    .hero {
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+    .muted {
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    @media (min-width: 1000px) {
+      .grid.two { grid-template-columns: 1fr 1fr; }
+    }
+    .card {
+      padding: 14px;
+    }
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    @media (min-width: 760px) {
+      .row.two { grid-template-columns: 1fr 1fr; }
+      .row.three { grid-template-columns: 1fr 1fr 1fr; }
+    }
+    label {
+      font-size: 13px;
+      color: #334155;
+      display: block;
+      margin-bottom: 4px;
+    }
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      font: inherit;
+      background: #fff;
+      color: var(--text);
+    }
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 9px 12px;
+      color: white;
+      background: var(--primary);
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.danger { background: var(--danger); }
+    button.secondary {
+      background: #49566a;
+    }
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      font-size: 12px;
+      padding: 4px 10px;
+      border: 1px solid var(--line);
+      margin-right: 6px;
+    }
+    .pill.ok {
+      color: var(--ok);
+      border-color: #b7e7d5;
+      background: #f1fcf7;
+    }
+    pre {
+      margin: 0;
+      padding: 12px;
+      background: #0f172a;
+      color: #e5e7eb;
+      border-radius: 10px;
+      overflow-x: auto;
+      min-height: 220px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .status {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .note {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>API Playground</h1>
+      <p class="muted">Інтерактивна сторінка для тесту ендпоїнтів руками.</p>
+      <div class="row two">
+        <div>
+          <label for="baseUrl">Base URL</label>
+          <input id="baseUrl" value="http://localhost:8000/v1">
+        </div>
+        <div>
+          <label>Опції</label>
+          <div style="padding-top:8px;">
+            <label style="display:inline-flex;align-items:center;gap:8px;">
+              <input id="useCredentials" type="checkbox" checked style="width:auto;">
+              credentials: include (cookie session)
+            </label>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:10px;">
+        <span class="pill ok">GET публічні</span>
+        <span class="pill">POST/PATCH/DELETE вимагають authority <b>edit_elements</b></span>
+      </div>
+      <p class="note">Виняток: <code>POST /v1/offers/selection</code> публічний для user flow.</p>
+    </section>
+
+    <div class="grid two">
+      <section class="card">
+        <h3>Auth</h3>
+        <div class="row two">
+          <div>
+            <label for="authLogin">Login</label>
+            <input id="authLogin" value="admin">
+          </div>
+          <div>
+            <label for="authPassword">Password</label>
+            <input id="authPassword" type="password" value="admin12345">
+          </div>
+        </div>
+        <div class="actions">
+          <button id="btnRegister">Register</button>
+          <button id="btnLogin">Login</button>
+          <button id="btnMe" class="secondary">Me</button>
+          <button id="btnLogout" class="secondary">Logout</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Attributes</h3>
+        <div class="row three">
+          <div>
+            <label for="attrOffset">offset</label>
+            <input id="attrOffset" type="number" value="0">
+          </div>
+          <div>
+            <label for="attrLimit">limit</label>
+            <input id="attrLimit" type="number" value="50">
+          </div>
+          <div>
+            <label for="attrId">id</label>
+            <input id="attrId" type="number" value="1">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="attrName">name</label>
+            <input id="attrName" value="has_car">
+          </div>
+        </div>
+        <div class="actions">
+          <button id="btnAttrList" class="secondary">GET list</button>
+          <button id="btnAttrGet" class="secondary">GET by id</button>
+          <button id="btnAttrCreate">POST</button>
+          <button id="btnAttrPatch">PATCH</button>
+          <button id="btnAttrDelete" class="danger">DELETE</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Questions</h3>
+        <div class="row three">
+          <div>
+            <label for="qOffset">offset</label>
+            <input id="qOffset" type="number" value="0">
+          </div>
+          <div>
+            <label for="qLimit">limit</label>
+            <input id="qLimit" type="number" value="50">
+          </div>
+          <div>
+            <label for="qId">id</label>
+            <input id="qId" type="number" value="1">
+          </div>
+        </div>
+        <div>
+          <label for="qBody">Body JSON (POST/PATCH)</label>
+          <textarea id="qBody">{
+  "text": "Який тип доставки вам підходить?",
+  "type": "multiple_choise",
+  "requires": true,
+  "answers": [
+    { "text": "Кур'єр", "attributes": [1] },
+    { "text": "Самовивіз", "attributes": [2] }
+  ]
+}</textarea>
+        </div>
+        <div class="actions">
+          <button id="btnQList" class="secondary">GET list</button>
+          <button id="btnQGet" class="secondary">GET by id</button>
+          <button id="btnQCreate">POST</button>
+          <button id="btnQPatch">PATCH</button>
+          <button id="btnQDelete" class="danger">DELETE</button>
+        </div>
+        <p class="note">type enum: <code>singe_choise | multiple_choise | manual_input</code></p>
+      </section>
+
+      <section class="card">
+        <h3>Offers</h3>
+        <div class="row three">
+          <div>
+            <label for="offerOffset">offset</label>
+            <input id="offerOffset" type="number" value="0">
+          </div>
+          <div>
+            <label for="offerLimit">limit</label>
+            <input id="offerLimit" type="number" value="50">
+          </div>
+          <div>
+            <label for="offerId">id</label>
+            <input id="offerId" type="number" value="1">
+          </div>
+        </div>
+        <div>
+          <label for="offerBody">Body JSON (POST/PATCH)</label>
+          <textarea id="offerBody">{
+  "name": "Premium Box",
+  "description": "Розширений набір",
+  "price": 199.99,
+  "requires_all": [1],
+  "requires_optional": [2, 3],
+  "excludes": [4],
+  "priority": 10
+}</textarea>
+        </div>
+        <div class="actions">
+          <button id="btnOfferList" class="secondary">GET list</button>
+          <button id="btnOfferGet" class="secondary">GET by id</button>
+          <button id="btnOfferCreate">POST</button>
+          <button id="btnOfferPatch">PATCH</button>
+          <button id="btnOfferDelete" class="danger">DELETE</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Offer Selection Engine</h3>
+        <div>
+          <label for="offerSelectionBody">Body JSON (POST /offers/selection)</label>
+          <textarea id="offerSelectionBody">{
+  "attributes": [1, 2, 3],
+  "limit": 3
+}</textarea>
+        </div>
+        <div class="actions">
+          <button id="btnOfferSelect">Select offers</button>
+        </div>
+        <p class="note">Логіка: <code>requires_all</code> must-match, <code>excludes</code> must-not-match, <code>requires_optional</code> підсилює score.</p>
+      </section>
+
+      <section class="card">
+        <h3>Users</h3>
+        <div class="row three">
+          <div>
+            <label for="userOffset">offset</label>
+            <input id="userOffset" type="number" value="0">
+          </div>
+          <div>
+            <label for="userLimit">limit</label>
+            <input id="userLimit" type="number" value="50">
+          </div>
+          <div>
+            <label for="userId">id</label>
+            <input id="userId" type="number" value="1">
+          </div>
+        </div>
+        <div>
+          <label for="userBody">Body JSON (POST/PATCH)</label>
+          <textarea id="userBody">{
+  "login": "manager1",
+  "password": "StrongPass123",
+  "authorities": ["edit_elements"]
+}</textarea>
+        </div>
+        <div class="actions">
+          <button id="btnUserList" class="secondary">GET list</button>
+          <button id="btnUserGet" class="secondary">GET by id</button>
+          <button id="btnUserCreate">POST</button>
+          <button id="btnUserPatch">PATCH</button>
+          <button id="btnUserDelete" class="danger">DELETE</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Custom Request</h3>
+        <div class="row three">
+          <div>
+            <label for="customMethod">method</label>
+            <select id="customMethod">
+              <option>GET</option>
+              <option>POST</option>
+              <option>PATCH</option>
+              <option>DELETE</option>
+            </select>
+          </div>
+          <div>
+            <label for="customPath">path (from /v1)</label>
+            <input id="customPath" value="/offers/">
+          </div>
+          <div style="display:flex;align-items:flex-end;">
+            <button id="btnCustom" style="width:100%;">Send</button>
+          </div>
+        </div>
+        <div>
+          <label for="customBody">Body JSON (optional)</label>
+          <textarea id="customBody">{}</textarea>
+        </div>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top:12px;">
+      <h3>Response</h3>
+      <div id="status" class="status">-</div>
+      <pre id="output">Тут буде результат запиту...</pre>
+    </section>
+  </div>
+
+  <script>
+    const output = document.getElementById("output");
+    const statusEl = document.getElementById("status");
+
+    function val(id) {
+      return document.getElementById(id).value;
+    }
+
+    function parseJson(text) {
+      const trimmed = text.trim();
+      if (!trimmed) {
+        return undefined;
+      }
+      return JSON.parse(trimmed);
+    }
+
+    async function send(method, path, body) {
+      const base = val("baseUrl").replace(/\/+$/, "");
+      const normalizedPath = path.startsWith("/") ? path : "/" + path;
+      const url = base + normalizedPath;
+
+      const options = {
+        method,
+        headers: {},
+        credentials: document.getElementById("useCredentials").checked ? "include" : "same-origin"
+      };
+      if (body !== undefined) {
+        options.headers["Content-Type"] = "application/json";
+        options.body = JSON.stringify(body);
+      }
+
+      statusEl.textContent = "Loading...";
+      try {
+        const response = await fetch(url, options);
+        const text = await response.text();
+        let payload = text;
+        try {
+          payload = text ? JSON.parse(text) : null;
+        } catch (_) {
+          payload = text;
+        }
+
+        statusEl.textContent = `${method} ${normalizedPath} -> ${response.status} ${response.statusText}`;
+        output.textContent = JSON.stringify({
+          request: {
+            method,
+            url,
+            credentials: options.credentials,
+            body: body ?? null
+          },
+          response: payload
+        }, null, 2);
+      } catch (error) {
+        statusEl.textContent = `${method} ${normalizedPath} -> NETWORK ERROR`;
+        output.textContent = String(error);
+      }
+    }
+
+    function bind(id, handler) {
+      document.getElementById(id).addEventListener("click", async () => {
+        try {
+          await handler();
+        } catch (error) {
+          statusEl.textContent = "CLIENT ERROR";
+          output.textContent = String(error);
+        }
+      });
+    }
+
+    bind("btnRegister", () => send("POST", "/auth/register", { login: val("authLogin"), password: val("authPassword") }));
+    bind("btnLogin", () => send("POST", "/auth/login", { login: val("authLogin"), password: val("authPassword") }));
+    bind("btnMe", () => send("GET", "/auth/me"));
+    bind("btnLogout", () => send("POST", "/auth/logout"));
+
+    bind("btnAttrList", () => send("GET", `/attributes/?offset=${val("attrOffset")}&limit=${val("attrLimit")}`));
+    bind("btnAttrGet", () => send("GET", `/attributes/${val("attrId")}`));
+    bind("btnAttrCreate", () => send("POST", "/attributes/", { name: val("attrName") }));
+    bind("btnAttrPatch", () => send("PATCH", `/attributes/${val("attrId")}`, { name: val("attrName") }));
+    bind("btnAttrDelete", () => send("DELETE", `/attributes/${val("attrId")}`));
+
+    bind("btnQList", () => send("GET", `/questions/?offset=${val("qOffset")}&limit=${val("qLimit")}`));
+    bind("btnQGet", () => send("GET", `/questions/${val("qId")}`));
+    bind("btnQCreate", () => send("POST", "/questions/", parseJson(val("qBody"))));
+    bind("btnQPatch", () => send("PATCH", `/questions/${val("qId")}`, parseJson(val("qBody"))));
+    bind("btnQDelete", () => send("DELETE", `/questions/${val("qId")}`));
+
+    bind("btnOfferList", () => send("GET", `/offers/?offset=${val("offerOffset")}&limit=${val("offerLimit")}`));
+    bind("btnOfferGet", () => send("GET", `/offers/${val("offerId")}`));
+    bind("btnOfferCreate", () => send("POST", "/offers/", parseJson(val("offerBody"))));
+    bind("btnOfferPatch", () => send("PATCH", `/offers/${val("offerId")}`, parseJson(val("offerBody"))));
+    bind("btnOfferDelete", () => send("DELETE", `/offers/${val("offerId")}`));
+    bind("btnOfferSelect", () => send("POST", "/offers/selection", parseJson(val("offerSelectionBody"))));
+
+    bind("btnUserList", () => send("GET", `/users/?offset=${val("userOffset")}&limit=${val("userLimit")}`));
+    bind("btnUserGet", () => send("GET", `/users/${val("userId")}`));
+    bind("btnUserCreate", () => send("POST", "/users/", parseJson(val("userBody"))));
+    bind("btnUserPatch", () => send("PATCH", `/users/${val("userId")}`, parseJson(val("userBody"))));
+    bind("btnUserDelete", () => send("DELETE", `/users/${val("userId")}`));
+
+    bind("btnCustom", () => {
+      const method = val("customMethod");
+      const path = val("customPath");
+      const body = method === "GET" || method === "DELETE" ? undefined : parseJson(val("customBody"));
+      return send(method, path, body);
+    });
+  </script>
+</body>
+</html>
