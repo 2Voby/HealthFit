@@ -5,7 +5,15 @@ from src.schemas.attribute import (
     AttributeUpdateRequest,
 )
 from src.schemas.auth import LoginRequest, RegisterRequest
-from src.schemas.offer import OfferCreateRequest, OfferResponse, OffersListResponse, OfferUpdateRequest
+from src.schemas.offer import (
+    OfferCreateRequest,
+    OfferResponse,
+    OffersListResponse,
+    OfferSelectionItem,
+    OfferSelectionRequest,
+    OfferSelectionResponse,
+    OfferUpdateRequest,
+)
 from src.schemas.question import (
     QuestionAnswerCreateRequest,
     QuestionAnswerResponse,
@@ -26,6 +34,9 @@ __all__ = [
     "OfferCreateRequest",
     "OfferResponse",
     "OffersListResponse",
+    "OfferSelectionItem",
+    "OfferSelectionRequest",
+    "OfferSelectionResponse",
     "OfferUpdateRequest",
     "QuestionAnswerCreateRequest",
     "QuestionAnswerResponse",

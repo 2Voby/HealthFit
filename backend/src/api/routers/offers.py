@@ -2,7 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src.api.deps import require_authority
 from src.models import Attribute, Offer, User
-from src.schemas.offer import OfferCreateRequest, OfferResponse, OffersListResponse, OfferUpdateRequest
+from src.schemas.offer import (
+    OfferCreateRequest,
+    OfferResponse,
+    OffersListResponse,
+    OfferSelectionItem,
+    OfferSelectionRequest,
+    OfferSelectionResponse,
+    OfferUpdateRequest,
+)
 
 router = APIRouter(prefix="/offers", tags=["offers"])
 
@@ -46,6 +54,62 @@ async def to_offer_response(offer: Offer) -> OfferResponse:
     )
 
 
+async def build_offer_selection_item(
+    offer: Offer,
+    selected_attribute_ids: set[int],
+) -> OfferSelectionItem | None:
+    requires_all_attributes = await offer.requires_all.all()
+    requires_optional_attributes = await offer.requires_optional.all()
+    excludes_attributes = await offer.excludes.all()
+
+    requires_all_ids = sorted(attribute.id for attribute in requires_all_attributes)
+    requires_optional_ids = sorted(attribute.id for attribute in requires_optional_attributes)
+    excludes_ids = sorted(attribute.id for attribute in excludes_attributes)
+
+    missing_requires_all_ids = [attribute_id for attribute_id in requires_all_ids if attribute_id not in selected_attribute_ids]
+    hit_excluded_ids = [attribute_id for attribute_id in excludes_ids if attribute_id in selected_attribute_ids]
+    if missing_requires_all_ids or hit_excluded_ids:
+        return None
+
+    matched_optional_ids = [attribute_id for attribute_id in requires_optional_ids if attribute_id in selected_attribute_ids]
+    matched_optional_count = len(matched_optional_ids)
+    total_optional_count = len(requires_optional_ids)
+
+    # priority is a primary rank signal; optional matches refine rank within same priority
+    score = offer.priority * 10_000 + matched_optional_count * 100
+    if total_optional_count > 0 and matched_optional_count == total_optional_count:
+        score += 25
+
+    reasoning = [
+        f"requires_all matched: {len(requires_all_ids)}/{len(requires_all_ids)}",
+        f"optional matched: {matched_optional_count}/{total_optional_count}",
+        f"excludes matched: {len(hit_excluded_ids)}",
+    ]
+
+    offer_response = OfferResponse(
+        id=offer.id,
+        name=offer.name,
+        description=offer.description,
+        price=offer.price,
+        requires_all=requires_all_ids,
+        requires_optional=requires_optional_ids,
+        excludes=excludes_ids,
+        priority=offer.priority,
+        created_at=offer.created_at,
+        updated_at=offer.updated_at,
+    )
+    return OfferSelectionItem(
+        offer=offer_response,
+        score=score,
+        matched_optional_count=matched_optional_count,
+        total_optional_count=total_optional_count,
+        matched_optional_ids=matched_optional_ids,
+        missing_requires_all_ids=missing_requires_all_ids,
+        hit_excluded_ids=hit_excluded_ids,
+        reasoning=reasoning,
+    )
+
+
 @router.get("/", response_model=OffersListResponse)
 async def list_offers(
     offset: int = Query(default=0, ge=0),
@@ -67,6 +131,29 @@ async def get_offer(
     if offer is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Offer not found")
     return await to_offer_response(offer)
+
+
+@router.post("/selection", response_model=OfferSelectionResponse)
+async def select_offers(payload: OfferSelectionRequest) -> OfferSelectionResponse:
+    selected_attributes = await resolve_attributes(payload.attributes)
+    selected_attribute_ids = sorted(attribute.id for attribute in selected_attributes)
+    selected_attribute_ids_set = set(selected_attribute_ids)
+
+    offers = await Offer.all().prefetch_related("requires_all", "requires_optional", "excludes")
+    eligible_items: list[OfferSelectionItem] = []
+    for offer in offers:
+        item = await build_offer_selection_item(offer, selected_attribute_ids_set)
+        if item:
+            eligible_items.append(item)
+
+    eligible_items.sort(key=lambda item: (-item.score, -item.offer.priority, item.offer.id))
+    limited_items = eligible_items[: payload.limit]
+    return OfferSelectionResponse(
+        requested_attributes=selected_attribute_ids,
+        total_considered=len(offers),
+        total_eligible=len(eligible_items),
+        items=limited_items,
+    )
 
 
 @router.post("/", response_model=OfferResponse, status_code=status.HTTP_201_CREATED)

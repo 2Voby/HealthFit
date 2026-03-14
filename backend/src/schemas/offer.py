@@ -57,3 +57,30 @@ class OfferResponse(BaseModel):
 class OffersListResponse(BaseModel):
     items: list[OfferResponse]
     total: int
+
+
+class OfferSelectionRequest(BaseModel):
+    attributes: list[int] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("attributes", "attribute_ids"),
+        serialization_alias="attributes",
+    )
+    limit: int = Field(default=3, ge=1, le=50)
+
+
+class OfferSelectionItem(BaseModel):
+    offer: OfferResponse
+    score: int
+    matched_optional_count: int
+    total_optional_count: int
+    matched_optional_ids: list[int]
+    missing_requires_all_ids: list[int]
+    hit_excluded_ids: list[int]
+    reasoning: list[str]
+
+
+class OfferSelectionResponse(BaseModel):
+    requested_attributes: list[int]
+    total_considered: int
+    total_eligible: int
+    items: list[OfferSelectionItem]
