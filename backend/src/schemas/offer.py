@@ -12,6 +12,11 @@ class OfferCreateRequest(BaseModel):
         serialization_alias="description",
     )
     price: float = Field(ge=0)
+    default: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("default", "is_default"),
+        serialization_alias="default",
+    )
     requires_all: list[int] = Field(default_factory=list)
     requires_optional: list[int] = Field(default_factory=list)
     excludes: list[int] = Field(
@@ -31,6 +36,11 @@ class OfferUpdateRequest(BaseModel):
         serialization_alias="description",
     )
     price: float | None = Field(default=None, ge=0)
+    default: bool | None = Field(
+        default=None,
+        validation_alias=AliasChoices("default", "is_default"),
+        serialization_alias="default",
+    )
     requires_all: list[int] | None = None
     requires_optional: list[int] | None = None
     excludes: list[int] | None = Field(
@@ -46,6 +56,7 @@ class OfferResponse(BaseModel):
     name: str
     description: str
     price: float
+    default: bool
     requires_all: list[int]
     requires_optional: list[int]
     excludes: list[int]

@@ -81,6 +81,7 @@ async def to_offer_response(offer: Offer) -> OfferResponse:
         name=offer.name,
         description=offer.description,
         price=offer.price,
+        default=offer.is_default,
         requires_all=requires_all_ids,
         requires_optional=requires_optional_ids,
         excludes=excludes_ids,
@@ -137,6 +138,7 @@ async def build_offer_selection_item(
         name=offer.name,
         description=offer.description,
         price=offer.price,
+        default=offer.is_default,
         requires_all=requires_all_ids,
         requires_optional=requires_optional_ids,
         excludes=excludes_ids,
@@ -155,6 +157,60 @@ async def build_offer_selection_item(
         missing_requires_all_ids=missing_requires_all_ids,
         hit_excluded_ids=hit_excluded_ids,
         reasoning=reasoning,
+    )
+
+
+async def build_default_offer_selection_item(
+    offer: Offer,
+    selected_attribute_ids: set[int],
+) -> OfferSelectionItem:
+    requires_all_attributes = await offer.requires_all.all()
+    requires_optional_attributes = await offer.requires_optional.all()
+    excludes_attributes = await offer.excludes.all()
+
+    requires_all_ids = sorted(attribute.id for attribute in requires_all_attributes)
+    requires_optional_ids = sorted(attribute.id for attribute in requires_optional_attributes)
+    excludes_ids = sorted(attribute.id for attribute in excludes_attributes)
+    requires_all_set = set(requires_all_ids)
+    requires_optional_ids = [attr_id for attr_id in requires_optional_ids if attr_id not in requires_all_set]
+
+    missing_requires_all_ids = [attribute_id for attribute_id in requires_all_ids if attribute_id not in selected_attribute_ids]
+    hit_excluded_ids = [attribute_id for attribute_id in excludes_ids if attribute_id in selected_attribute_ids]
+    matched_optional_ids = [attribute_id for attribute_id in requires_optional_ids if attribute_id in selected_attribute_ids]
+    missing_optional_ids = [attribute_id for attribute_id in requires_optional_ids if attribute_id not in selected_attribute_ids]
+
+    total_optional_count = len(requires_optional_ids)
+    matched_optional_count = len(matched_optional_ids)
+    optional_coverage = (matched_optional_count / total_optional_count) if total_optional_count > 0 else 1.0
+
+    offer_response = OfferResponse(
+        id=offer.id,
+        name=offer.name,
+        description=offer.description,
+        price=offer.price,
+        default=offer.is_default,
+        requires_all=requires_all_ids,
+        requires_optional=requires_optional_ids,
+        excludes=excludes_ids,
+        priority=offer.priority,
+        created_at=offer.created_at,
+        updated_at=offer.updated_at,
+    )
+    return OfferSelectionItem(
+        offer=offer_response,
+        score=offer.priority * 1_000_000,
+        matched_optional_count=matched_optional_count,
+        total_optional_count=total_optional_count,
+        matched_optional_ids=matched_optional_ids,
+        missing_optional_ids=missing_optional_ids,
+        optional_coverage=optional_coverage,
+        missing_requires_all_ids=missing_requires_all_ids,
+        hit_excluded_ids=hit_excluded_ids,
+        reasoning=[
+            "fallback default offer",
+            f"missing_requires_all: {len(missing_requires_all_ids)}",
+            f"hit_excluded: {len(hit_excluded_ids)}",
+        ],
     )
 
 
@@ -195,6 +251,24 @@ async def select_offers(payload: OfferSelectionRequest) -> OfferSelectionRespons
             eligible_items.append(item)
 
     eligible_items.sort(key=lambda item: (-item.score, -item.offer.priority, item.offer.id))
+    if not eligible_items:
+        default_offers = await Offer.filter(is_default=True).prefetch_related(
+            "requires_all",
+            "requires_optional",
+            "excludes",
+        )
+        fallback_items = [
+            await build_default_offer_selection_item(offer, selected_attribute_ids_set)
+            for offer in default_offers
+        ]
+        fallback_items.sort(key=lambda item: (-item.offer.priority, item.offer.id))
+        return OfferSelectionResponse(
+            requested_attributes=selected_attribute_ids,
+            total_considered=len(offers),
+            total_eligible=0,
+            items=fallback_items,
+        )
+
     return OfferSelectionResponse(
         requested_attributes=selected_attribute_ids,
         total_considered=len(offers),
@@ -219,6 +293,7 @@ async def create_offer(
         name=payload.name,
         description=payload.description,
         price=payload.price,
+        is_default=payload.default,
         priority=payload.priority,
     )
 
@@ -266,6 +341,8 @@ async def update_offer(
         offer.description = payload.description
     if payload.price is not None:
         offer.price = payload.price
+    if payload.default is not None:
+        offer.is_default = payload.default
     if payload.priority is not None:
         offer.priority = payload.priority
 

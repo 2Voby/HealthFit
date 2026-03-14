@@ -7,6 +7,7 @@ class Offer(Model):
     name = fields.CharField(max_length=120, unique=True, index=True)
     description = fields.TextField()
     price = fields.FloatField()
+    is_default = fields.BooleanField(default=False, index=True)
     priority = fields.IntField(default=0)
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
