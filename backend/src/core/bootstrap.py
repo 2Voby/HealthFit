@@ -41,14 +41,6 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         return
 
     attribute_names = [
-        "age_18_24",
-        "age_25_34",
-        "age_35_44",
-        "age_45_plus",
-        "gender_female",
-        "gender_male",
-        "gender_non_binary",
-        "gender_not_specified",
         "goal_weight_loss",
         "goal_strength",
         "goal_flexibility",
@@ -57,14 +49,14 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         "context_home",
         "context_gym",
         "context_outdoor",
-        "equipment_none",
-        "equipment_basic",
-        "equipment_full_gym",
         "time_10_15",
         "time_20_30",
         "time_30_45",
         "injury_knee_or_back",
         "injury_none",
+        "stress_low",
+        "stress_medium",
+        "stress_high",
         "level_beginner",
         "level_intermediate",
         "level_advanced",
@@ -74,20 +66,6 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         "preference_mobility",
         "preference_low_impact",
         "preference_short_sessions",
-        "barrier_time",
-        "barrier_stress",
-        "barrier_fatigue",
-        "barrier_discipline",
-        "constraint_schedule_tight",
-        "stress_low",
-        "stress_medium",
-        "stress_high",
-        "sleep_poor",
-        "sleep_ok",
-        "sleep_good",
-        "energy_low",
-        "energy_mid",
-        "energy_high",
     ]
     attributes_by_name: dict[str, Attribute] = {}
     for name in attribute_names:
@@ -116,28 +94,6 @@ async def bootstrap_mock_data(settings: Settings) -> None:
                 await answer.attributes.add(*(attributes_by_name[name] for name in answer_attribute_names))
         return question, created_answers
 
-    q_age, _ = await create_question_with_answers(
-        text="Ваш вік?",
-        question_type="singe_choise",
-        requires=True,
-        answers=[
-            ("18–24", ["age_18_24"]),
-            ("25–34", ["age_25_34"]),
-            ("35–44", ["age_35_44"]),
-            ("45+", ["age_45_plus"]),
-        ],
-    )
-    q_gender, _ = await create_question_with_answers(
-        text="Ваша стать?",
-        question_type="singe_choise",
-        requires=False,
-        answers=[
-            ("Жіноча", ["gender_female"]),
-            ("Чоловіча", ["gender_male"]),
-            ("Інша", ["gender_non_binary"]),
-            ("Не вказувати", ["gender_not_specified"]),
-        ],
-    )
     q_goal, _ = await create_question_with_answers(
         text="Яка ваша головна ціль?",
         question_type="singe_choise",
@@ -150,12 +106,6 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Витривалість", ["goal_endurance"]),
         ],
     )
-    q_intro_text, _ = await create_question_with_answers(
-        text="Супер. Зараз ми підберемо персональний план і wellness kit під ваш ритм.",
-        question_type="text",
-        requires=False,
-        answers=[],
-    )
     q_context, q_context_answers = await create_question_with_answers(
         text="Де вам зручніше займатися?",
         question_type="singe_choise",
@@ -166,24 +116,14 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("На вулиці", ["context_outdoor"]),
         ],
     )
-    q_equipment, _ = await create_question_with_answers(
-        text="Яке обладнання у вас є?",
-        question_type="singe_choise",
-        requires=False,
-        answers=[
-            ("Без обладнання", ["equipment_none"]),
-            ("Базовий набір (резинки/гантелі)", ["equipment_basic"]),
-            ("Повний доступ до тренажерів", ["equipment_full_gym"]),
-        ],
-    )
     q_time, _ = await create_question_with_answers(
         text="Скільки часу на день?",
         question_type="singe_choise",
         requires=True,
         answers=[
-            ("10–15 хв", ["time_10_15", "preference_short_sessions", "constraint_schedule_tight"]),
+            ("10–15 хв", ["time_10_15", "preference_short_sessions"]),
             ("20–30 хв", ["time_20_30"]),
-            ("30–45 хв", ["time_30_45"]),
+            ("30–45 хв", ["time_30_45", "level_intermediate"]),
         ],
     )
     q_injury, _ = await create_question_with_answers(
@@ -218,17 +158,6 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Короткі сесії", ["preference_short_sessions"]),
         ],
     )
-    q_barriers, _ = await create_question_with_answers(
-        text="Що найчастіше заважає тренуватися?",
-        question_type="multiple_choise",
-        requires=False,
-        answers=[
-            ("Брак часу", ["barrier_time", "constraint_schedule_tight"]),
-            ("Стрес", ["barrier_stress"]),
-            ("Втома", ["barrier_fatigue"]),
-            ("Брак дисципліни", ["barrier_discipline"]),
-        ],
-    )
     q_stress, _ = await create_question_with_answers(
         text="Ваш рівень стресу?",
         question_type="singe_choise",
@@ -239,25 +168,11 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Високий", ["stress_high"]),
         ],
     )
-    q_sleep, _ = await create_question_with_answers(
-        text="Як ви оцінюєте якість сну?",
-        question_type="singe_choise",
+    q_final_text, _ = await create_question_with_answers(
+        text="Ви за один крок до успху. Натисніть далі, щоб побачити персональний офер.",
+        question_type="text",
         requires=False,
-        answers=[
-            ("Погано", ["sleep_poor"]),
-            ("Нормально", ["sleep_ok"]),
-            ("Добре", ["sleep_good"]),
-        ],
-    )
-    q_energy, _ = await create_question_with_answers(
-        text="Рівень енергії протягом дня?",
-        question_type="singe_choise",
-        requires=False,
-        answers=[
-            ("Низький", ["energy_low"]),
-            ("Середній", ["energy_mid"]),
-            ("Високий", ["energy_high"]),
-        ],
+        answers=[],
     )
 
     async def create_offer(
@@ -293,7 +208,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         price=49.99,
         priority=90,
         requires_all=["goal_weight_loss", "context_home", "time_20_30"],
-        requires_optional=["level_beginner", "equipment_basic", "preference_short_sessions"],
+        requires_optional=["level_beginner", "preference_short_sessions"],
         excludes=[],
     )
     await create_offer(
@@ -306,7 +221,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         price=59.99,
         priority=88,
         requires_all=["goal_strength", "context_gym", "injury_none"],
-        requires_optional=["level_intermediate", "level_advanced", "preference_strength", "equipment_full_gym"],
+        requires_optional=["level_intermediate", "level_advanced", "preference_strength"],
         excludes=["injury_knee_or_back"],
     )
     await create_offer(
@@ -319,7 +234,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         price=54.99,
         priority=86,
         requires_all=["goal_strength", "context_gym", "injury_knee_or_back"],
-        requires_optional=["preference_low_impact", "preference_mobility", "barrier_fatigue"],
+        requires_optional=["preference_low_impact", "preference_mobility"],
         excludes=[],
     )
     await create_offer(
@@ -332,7 +247,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         price=44.99,
         priority=84,
         requires_all=["goal_endurance", "context_outdoor", "injury_none"],
-        requires_optional=["preference_running", "level_beginner", "energy_mid", "energy_high"],
+        requires_optional=["preference_running", "level_beginner"],
         excludes=["injury_knee_or_back"],
     )
     await create_offer(
@@ -345,7 +260,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         price=39.99,
         priority=82,
         requires_all=["goal_flexibility", "context_home"],
-        requires_optional=["preference_yoga", "preference_mobility", "stress_medium", "stress_high"],
+        requires_optional=["preference_yoga", "preference_mobility"],
         excludes=[],
     )
     await create_offer(
@@ -358,7 +273,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         price=29.99,
         priority=70,
         requires_all=["stress_high"],
-        requires_optional=["goal_stress", "sleep_poor", "energy_low", "barrier_stress"],
+        requires_optional=["goal_stress", "preference_yoga"],
         excludes=[],
     )
     await create_offer(
@@ -371,7 +286,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         price=34.99,
         priority=95,
         requires_all=["goal_weight_loss", "context_home", "time_10_15"],
-        requires_optional=["preference_short_sessions", "constraint_schedule_tight", "barrier_time"],
+        requires_optional=["preference_short_sessions", "level_beginner"],
         excludes=[],
     )
 
@@ -380,20 +295,14 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         is_active=True,
     )
     ordered_questions = [
-        q_age,
-        q_gender,
         q_goal,
-        q_intro_text,
         q_context,
-        q_equipment,
         q_time,
         q_injury,
+        q_stress,
         q_level,
         q_preferences,
-        q_barriers,
-        q_stress,
-        q_sleep,
-        q_energy,
+        q_final_text,
     ]
     for position, question in enumerate(ordered_questions, start=1):
         await FlowQuestion.create(
@@ -408,59 +317,31 @@ async def bootstrap_mock_data(settings: Settings) -> None:
 
     await FlowTransition.create(
         flow=flow,
-        from_question=q_age,
-        to_question=q_gender,
-        condition_type="always",
-        priority=10,
-    )
-    await FlowTransition.create(
-        flow=flow,
-        from_question=q_gender,
-        to_question=q_goal,
-        condition_type="always",
-        priority=10,
-    )
-    await FlowTransition.create(
-        flow=flow,
         from_question=q_goal,
-        to_question=q_intro_text,
-        condition_type="always",
-        priority=10,
-    )
-    await FlowTransition.create(
-        flow=flow,
-        from_question=q_intro_text,
         to_question=q_context,
         condition_type="always",
         priority=10,
     )
-
-    transition_context_to_equipment = await FlowTransition.create(
-        flow=flow,
-        from_question=q_context,
-        to_question=q_equipment,
-        condition_type="answer_any",
-        priority=10,
-    )
-    await FlowTransitionAnswer.create(transition=transition_context_to_equipment, answer=context_home_answer)
 
     transition_context_to_time = await FlowTransition.create(
         flow=flow,
         from_question=q_context,
         to_question=q_time,
         condition_type="answer_any",
-        priority=20,
-    )
-    await FlowTransitionAnswer.create(transition=transition_context_to_time, answer=context_gym_answer)
-    await FlowTransitionAnswer.create(transition=transition_context_to_time, answer=context_outdoor_answer)
-
-    await FlowTransition.create(
-        flow=flow,
-        from_question=q_equipment,
-        to_question=q_time,
-        condition_type="always",
         priority=10,
     )
+    await FlowTransitionAnswer.create(transition=transition_context_to_time, answer=context_home_answer)
+
+    transition_context_to_injury = await FlowTransition.create(
+        flow=flow,
+        from_question=q_context,
+        to_question=q_injury,
+        condition_type="answer_any",
+        priority=20,
+    )
+    await FlowTransitionAnswer.create(transition=transition_context_to_injury, answer=context_gym_answer)
+    await FlowTransitionAnswer.create(transition=transition_context_to_injury, answer=context_outdoor_answer)
+
     await FlowTransition.create(
         flow=flow,
         from_question=q_time,
@@ -471,6 +352,13 @@ async def bootstrap_mock_data(settings: Settings) -> None:
     await FlowTransition.create(
         flow=flow,
         from_question=q_injury,
+        to_question=q_stress,
+        condition_type="always",
+        priority=10,
+    )
+    await FlowTransition.create(
+        flow=flow,
+        from_question=q_stress,
         to_question=q_level,
         condition_type="always",
         priority=10,
@@ -485,34 +373,13 @@ async def bootstrap_mock_data(settings: Settings) -> None:
     await FlowTransition.create(
         flow=flow,
         from_question=q_preferences,
-        to_question=q_barriers,
+        to_question=q_final_text,
         condition_type="always",
         priority=10,
     )
     await FlowTransition.create(
         flow=flow,
-        from_question=q_barriers,
-        to_question=q_stress,
-        condition_type="always",
-        priority=10,
-    )
-    await FlowTransition.create(
-        flow=flow,
-        from_question=q_stress,
-        to_question=q_sleep,
-        condition_type="always",
-        priority=10,
-    )
-    await FlowTransition.create(
-        flow=flow,
-        from_question=q_sleep,
-        to_question=q_energy,
-        condition_type="always",
-        priority=10,
-    )
-    await FlowTransition.create(
-        flow=flow,
-        from_question=q_energy,
+        from_question=q_final_text,
         to_question=None,
         condition_type="always",
         priority=10,
