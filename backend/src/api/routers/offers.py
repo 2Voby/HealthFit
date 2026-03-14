@@ -195,12 +195,11 @@ async def select_offers(payload: OfferSelectionRequest) -> OfferSelectionRespons
             eligible_items.append(item)
 
     eligible_items.sort(key=lambda item: (-item.score, -item.offer.priority, item.offer.id))
-    limited_items = eligible_items[: payload.limit]
     return OfferSelectionResponse(
         requested_attributes=selected_attribute_ids,
         total_considered=len(offers),
         total_eligible=len(eligible_items),
-        items=limited_items,
+        items=eligible_items,
     )
 
 

@@ -65,7 +65,6 @@ class OfferSelectionRequest(BaseModel):
         validation_alias=AliasChoices("attributes", "attribute_ids"),
         serialization_alias="attributes",
     )
-    limit: int = Field(default=3, ge=1, le=50)
 
 
 class OfferSelectionItem(BaseModel):

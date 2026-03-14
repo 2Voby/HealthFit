@@ -62,8 +62,8 @@ Additional CRUD:
 - Question types: `singe_choise | multiple_choise | manual_input | text` (`text` = informational screen without answers).
 
 Offer selection:
-- `POST /v1/offers/selection` with `{ "attributes": [1,2,3], "limit": 3 }`
-- Filters by `requires_all` and `excludes`, ranks by `priority` + matched `requires_optional`.
+- `POST /v1/offers/selection` with `{ "attributes": [1,2,3] }`
+- Filters by `requires_all` and `excludes`, returns all eligible offers ranked by `priority` + matched `requires_optional`.
 
 Active flow:
 - `GET /v1/flows/active` returns only active flow with ordered questions and answers.
