@@ -20,7 +20,7 @@ export function AppLayout() {
       {/* Sidebar */}
       <aside className="flex w-56 flex-col border-r bg-muted/40">
         <div className="flex h-14 items-center px-4 font-semibold">
-          BebraMe
+          HealthFit
         </div>
         <Separator />
         <nav className="flex-1 space-y-1 p-2">

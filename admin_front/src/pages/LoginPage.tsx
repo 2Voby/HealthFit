@@ -19,7 +19,7 @@ export function LoginPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setUser({ id: '1', email: 'admin@bebrame.com', name: 'Admin' })
+    setUser({ id: '1', email: 'admin@betterme.world', name: 'Admin' })
     navigate('/')
   }
 

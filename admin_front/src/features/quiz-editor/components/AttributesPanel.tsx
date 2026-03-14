@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useDraggable } from '@dnd-kit/core'
-import { ChevronLeft, ChevronRight, Plus, Pencil, Trash2, GripVertical, Check, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Trash2, GripVertical, ChevronDown, ChevronUp } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,102 +8,155 @@ import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { useAttributesStore } from '../store/attributes.store'
+import { parseAttributeName } from '../constants'
 import type { AttributeResponse } from '@/types/api'
 
-function DraggableAttribute({ attribute }: { attribute: AttributeResponse }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+function DraggableAttributeValue({ attribute }: { attribute: AttributeResponse }) {
+  const { value } = parseAttributeName(attribute.name)
+  const { attributes: dragAttrs, listeners, setNodeRef, isDragging } = useDraggable({
     id: `attr-${attribute.id}`,
     data: { type: 'attribute', attributeId: attribute.id },
   })
-  const [editing, setEditing] = useState(false)
-  const [editName, setEditName] = useState(attribute.name)
-  const updateAttribute = useAttributesStore((s) => s.updateAttribute)
   const removeAttribute = useAttributesStore((s) => s.removeAttribute)
-
-  const handleSave = () => {
-    if (editName.trim()) {
-      updateAttribute(attribute.id, editName.trim())
-    }
-    setEditing(false)
-  }
-
-  if (editing) {
-    return (
-      <div className="flex items-center gap-1 px-2 py-1">
-        <Input
-          className="h-6 text-xs flex-1"
-          value={editName}
-          onChange={(e) => setEditName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSave()
-            if (e.key === 'Escape') setEditing(false)
-          }}
-          autoFocus
-        />
-        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={handleSave}>
-          <Check className="h-3 w-3" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setEditing(false)}>
-          <X className="h-3 w-3" />
-        </Button>
-      </div>
-    )
-  }
 
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        'group flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors',
+        'group flex items-center gap-1 rounded px-2 py-0.5 text-xs transition-colors',
         'hover:bg-accent cursor-grab active:cursor-grabbing',
         isDragging && 'opacity-50',
       )}
       {...listeners}
-      {...attributes}
+      {...dragAttrs}
     >
-      <GripVertical className="h-3 w-3 shrink-0 text-muted-foreground/50" />
-      <span className="flex-1 truncate">{attribute.name}</span>
-      <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-5 w-5"
-          onClick={(e) => {
-            e.stopPropagation()
-            setEditName(attribute.name)
-            setEditing(true)
-          }}
+      <GripVertical className="h-2.5 w-2.5 shrink-0 text-muted-foreground/40" />
+      <span className="flex-1 truncate text-muted-foreground">{value}</span>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-4 w-4 shrink-0 opacity-0 group-hover:opacity-100 hover:text-destructive"
+        onClick={(e) => {
+          e.stopPropagation()
+          removeAttribute(attribute.id)
+        }}
+      >
+        <Trash2 className="h-2.5 w-2.5" />
+      </Button>
+    </div>
+  )
+}
+
+function AttributeGroup({ groupKey, items }: { groupKey: string; items: AttributeResponse[] }) {
+  const [expanded, setExpanded] = useState(true)
+  const [addingValue, setAddingValue] = useState(false)
+  const [newValue, setNewValue] = useState('')
+  const addValue = useAttributesStore((s) => s.addValue)
+  const removeAttribute = useAttributesStore((s) => s.removeAttribute)
+
+  const handleAddValue = () => {
+    if (newValue.trim()) {
+      addValue(groupKey, newValue.trim())
+      setNewValue('')
+      setAddingValue(false)
+    }
+  }
+
+  const handleRemoveGroup = () => {
+    for (const item of items) {
+      removeAttribute(item.id)
+    }
+  }
+
+  return (
+    <div className="space-y-0.5">
+      <div className="group flex items-center gap-1 px-2 py-1">
+        <button
+          className="flex items-center gap-1 flex-1 min-w-0 text-left"
+          onClick={() => setExpanded(!expanded)}
         >
-          <Pencil className="h-2.5 w-2.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-5 w-5 hover:text-destructive"
-          onClick={(e) => {
-            e.stopPropagation()
-            removeAttribute(attribute.id)
-          }}
-        >
-          <Trash2 className="h-2.5 w-2.5" />
-        </Button>
+          {expanded ? (
+            <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+          ) : (
+            <ChevronUp className="h-3 w-3 shrink-0 text-muted-foreground" />
+          )}
+          <span className="text-xs font-medium truncate">{groupKey}</span>
+          <span className="text-[10px] text-muted-foreground">({items.length})</span>
+        </button>
+        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-4 w-4"
+            onClick={() => setAddingValue(true)}
+          >
+            <Plus className="h-2.5 w-2.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-4 w-4 hover:text-destructive"
+            onClick={handleRemoveGroup}
+          >
+            <Trash2 className="h-2.5 w-2.5" />
+          </Button>
+        </div>
       </div>
+
+      {expanded && (
+        <div className="pl-3 space-y-0.5">
+          {items.map((attr) => (
+            <DraggableAttributeValue key={attr.id} attribute={attr} />
+          ))}
+          {addingValue && (
+            <div className="flex items-center gap-1 px-1 py-0.5">
+              <Input
+                className="h-5 text-[11px] flex-1"
+                placeholder="value..."
+                value={newValue}
+                onChange={(e) => setNewValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleAddValue()
+                  if (e.key === 'Escape') { setAddingValue(false); setNewValue('') }
+                }}
+                autoFocus
+              />
+              <Button variant="ghost" size="icon" className="h-4 w-4" onClick={handleAddValue}>
+                <Plus className="h-2.5 w-2.5" />
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
 export function AttributesPanel() {
   const [collapsed, setCollapsed] = useState(false)
-  const [adding, setAdding] = useState(false)
-  const [newName, setNewName] = useState('')
+  const [addingKey, setAddingKey] = useState(false)
+  const [newKey, setNewKey] = useState('')
+  const [newFirstValue, setNewFirstValue] = useState('')
   const attributes = useAttributesStore((s) => s.attributes)
-  const addAttribute = useAttributesStore((s) => s.addAttribute)
+  const addValue = useAttributesStore((s) => s.addValue)
 
-  const handleAdd = () => {
-    if (newName.trim()) {
-      addAttribute(newName.trim())
-      setNewName('')
-      setAdding(false)
+  const grouped = useMemo(() => {
+    const groups = new Map<string, AttributeResponse[]>()
+    for (const attr of attributes) {
+      const { key } = parseAttributeName(attr.name)
+      const group = groups.get(key) ?? []
+      group.push(attr)
+      groups.set(key, group)
+    }
+    return groups
+  }, [attributes])
+
+  const handleAddKey = () => {
+    if (newKey.trim() && newFirstValue.trim()) {
+      addValue(newKey.trim(), newFirstValue.trim())
+      setNewKey('')
+      setNewFirstValue('')
+      setAddingKey(false)
     }
   }
 
@@ -111,7 +164,7 @@ export function AttributesPanel() {
     <div
       className={cn(
         'relative flex flex-col border-l bg-background transition-[width] duration-200',
-        collapsed ? 'w-12' : 'w-56',
+        collapsed ? 'w-12' : 'w-60',
       )}
     >
       <div className="flex items-center justify-between px-3 py-2">
@@ -133,7 +186,8 @@ export function AttributesPanel() {
               variant="ghost"
               size="icon"
               className="h-7 w-7 shrink-0"
-              onClick={() => setAdding(!adding)}
+              onClick={() => setAddingKey(!addingKey)}
+              title="Add new attribute key"
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -155,24 +209,33 @@ export function AttributesPanel() {
 
       <Separator />
 
-      {!collapsed && adding && (
+      {!collapsed && addingKey && (
         <div className="px-2 py-2 space-y-1">
           <Input
-            className="h-7 text-xs"
-            placeholder="Attribute name..."
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
+            className="h-6 text-xs"
+            placeholder="Key (e.g. age)"
+            value={newKey}
+            onChange={(e) => setNewKey(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') handleAdd()
-              if (e.key === 'Escape') { setAdding(false); setNewName('') }
+              if (e.key === 'Escape') { setAddingKey(false); setNewKey(''); setNewFirstValue('') }
             }}
             autoFocus
           />
+          <Input
+            className="h-6 text-xs"
+            placeholder="First value (e.g. 11-20)"
+            value={newFirstValue}
+            onChange={(e) => setNewFirstValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleAddKey()
+              if (e.key === 'Escape') { setAddingKey(false); setNewKey(''); setNewFirstValue('') }
+            }}
+          />
           <div className="flex gap-1">
-            <Button variant="default" size="sm" className="h-6 flex-1 text-xs" onClick={handleAdd}>
+            <Button variant="default" size="sm" className="h-5 flex-1 text-[11px]" onClick={handleAddKey}>
               Add
             </Button>
-            <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setAdding(false); setNewName('') }}>
+            <Button variant="ghost" size="sm" className="h-5 text-[11px]" onClick={() => { setAddingKey(false); setNewKey(''); setNewFirstValue('') }}>
               Cancel
             </Button>
           </div>
@@ -181,19 +244,19 @@ export function AttributesPanel() {
       )}
 
       <ScrollArea className="flex-1">
-        <div className="p-1 space-y-0.5">
-          {!collapsed && attributes.map((attr) => (
-            <DraggableAttribute key={attr.id} attribute={attr} />
+        <div className="p-1 space-y-1">
+          {!collapsed && Array.from(grouped.entries()).map(([key, items]) => (
+            <AttributeGroup key={key} groupKey={key} items={items} />
           ))}
           {collapsed && (
             <div className="flex flex-col items-center gap-1 pt-1">
-              {attributes.slice(0, 8).map((attr) => (
+              {Array.from(grouped.keys()).slice(0, 8).map((key) => (
                 <span
-                  key={attr.id}
+                  key={key}
                   className="text-[9px] text-muted-foreground truncate w-8 text-center"
-                  title={attr.name}
+                  title={key}
                 >
-                  {attr.name.slice(0, 3)}
+                  {key.slice(0, 4)}
                 </span>
               ))}
             </div>

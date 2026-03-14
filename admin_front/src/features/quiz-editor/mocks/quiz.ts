@@ -19,9 +19,9 @@ export const MOCK_QUIZ: QuizGraph & { quizId: string; quizName: string } = {
         questionType: 'single_choice',
         requires: true,
         answers: [
-          { id: a1, text: 'Weight loss', attributes: [3] },
-          { id: a2, text: 'Build strength', attributes: [3, 6] },
-          { id: a3, text: 'Flexibility', attributes: [3, 9] },
+          { id: a1, text: 'Weight loss', attributes: [7] },       // goal-weight_loss
+          { id: a2, text: 'Build strength', attributes: [8] },     // goal-strength
+          { id: a3, text: 'Flexibility', attributes: [9] },        // goal-flexibility
         ],
       },
     },
@@ -35,8 +35,8 @@ export const MOCK_QUIZ: QuizGraph & { quizId: string; quizName: string } = {
         questionType: 'single_choice',
         requires: false,
         answers: [
-          { id: 'a4-home', text: 'At home', attributes: [4] },
-          { id: 'a5-gym', text: 'At the gym', attributes: [4] },
+          { id: 'a4-home', text: 'At home', attributes: [11] },    // context-home
+          { id: 'a5-gym', text: 'At the gym', attributes: [12] },  // context-gym
         ],
       },
     },
@@ -58,8 +58,8 @@ export const MOCK_QUIZ: QuizGraph & { quizId: string; quizName: string } = {
         kind: 'offer',
         offerId: '1',
         label: 'Weight Loss Starter',
-        requires_all: [3],
-        requires_optional: [1, 4],
+        requires_all: [7],
+        requires_optional: [1, 11],
         excludes: [],
       },
     },
@@ -72,7 +72,7 @@ export const MOCK_QUIZ: QuizGraph & { quizId: string; quizName: string } = {
         offerId: '5',
         label: 'Yoga & Mobility',
         requires_all: [],
-        requires_optional: [3, 9],
+        requires_optional: [9, 11],
         excludes: [],
       },
     },

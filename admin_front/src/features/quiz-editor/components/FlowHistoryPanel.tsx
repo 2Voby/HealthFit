@@ -35,9 +35,7 @@ export function FlowHistoryPanel() {
   const activeFlowId = useFlowStore((s) => s.activeFlowId)
   const history = useFlowStore((s) => s.history)
   const rollbackToRevision = useFlowStore((s) => s.rollbackToRevision)
-  const getActiveFlow = useFlowStore((s) => s.getActiveFlow)
-
-  const flow = getActiveFlow()
+  const flow = useFlowStore((s) => s.flows.find((f) => f.id === s.activeFlowId))
   const entries = activeFlowId ? (history[activeFlowId] ?? []) : []
   const sortedEntries = [...entries].sort((a, b) => b.revision - a.revision)
   const latestRevision = sortedEntries.length > 0 ? sortedEntries[0].revision : 0
