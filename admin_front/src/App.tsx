@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { QuizEditorPage } from '@/features/quiz-editor/pages/QuizEditorPage'
 import { LoginPage } from '@/pages/LoginPage'
+import { RegisterPage } from '@/pages/RegisterPage'
 import { useAuthStore } from '@/store/auth.store'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -22,6 +23,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<GuestOnly><LoginPage /></GuestOnly>} />
+          <Route path="/register" element={<GuestOnly><RegisterPage /></GuestOnly>} />
 
           <Route path="/" element={<RequireAuth><QuizEditorPage /></RequireAuth>} />
         </Routes>
