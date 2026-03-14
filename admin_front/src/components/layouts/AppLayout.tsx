@@ -4,19 +4,13 @@ import { LayoutDashboard, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { useAuthStore } from '@/store/auth.store'
-import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 export function AppLayout() {
   const navigate = useNavigate()
   const { user, clearUser } = useAuthStore()
 
-  async function handleLogout() {
-    try {
-      await api.post('/auth/logout')
-    } catch {
-      // ignore — clear local state anyway
-    }
+  function handleLogout() {
     clearUser()
     navigate('/login')
   }
