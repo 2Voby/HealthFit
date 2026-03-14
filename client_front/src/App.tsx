@@ -1,5 +1,4 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import MainPage from "@/pages/MainPage/MainPage";
 import QuizPage from "@/pages/QuizPage/QuizPage";
 import ResultPage from "@/pages/ResultPage/ResultPage";
