@@ -40,7 +40,9 @@ import { FlowHistoryPanel } from './FlowHistoryPanel'
 import { useFlows, useCreateFlow, useUpdateFlow, useDeleteFlow } from '@/hooks/use-flows'
 import { useLogout } from '@/hooks/use-auth'
 import { useAuthStore } from '@/store/auth.store'
-import { graphToFlow } from '../utils/graph-to-flow'
+import { graphToFlow, mapQuestionTypeToApi } from '../utils/graph-to-flow'
+import { questionsService } from '@/services/questions.service'
+import type { QuestionCreateRequest } from '@/types/api'
 
 function CreateFlowDialog() {
   const [open, setOpen] = useState(false)
@@ -153,6 +155,7 @@ function RenameFlowDialog() {
 
 export function TopBar() {
   const { nodes, edges } = useEditorStore()
+  const updateNodeData = useEditorStore((s) => s.updateNodeData)
   const isDirty = useEditorStore((s) => s.isDirty)
   const autoLayout = useEditorStore((s) => s.autoLayout)
   const serializeGraph = useEditorStore((s) => s.serializeGraph)
@@ -176,19 +179,70 @@ export function TopBar() {
 
   const quizName = activeFlow?.name ?? 'No flow selected'
 
-  const handleSave = () => {
+  const [isSaving, setIsSaving] = useState(false)
+
+  const handleSave = async () => {
     if (!activeFlowId) return
-    const flowUpdate = graphToFlow(nodes, edges)
-    updateFlow.mutate(
-      { id: activeFlowId, data: flowUpdate },
-      {
-        onSuccess: (updated) => {
-          selectFlow(updated)
-          toast.success('Saved')
+    setIsSaving(true)
+    try {
+      // Create any new questions that don't have a backendQuestionId yet
+      for (const node of nodes) {
+        if (node.data.kind === 'question' && !node.data.backendQuestionId) {
+          const req: QuestionCreateRequest = {
+            text: node.data.text || 'New question',
+            type: mapQuestionTypeToApi(node.data.questionType) as QuestionCreateRequest['type'],
+            requires: node.data.requires,
+            answers: node.data.answers.map((a) => ({
+              text: a.text,
+              attributes: a.attributes,
+            })),
+          }
+          const created = await questionsService.create(req)
+          // Map frontend answer IDs to backend answer IDs
+          const answerUpdates: Record<string, { backendId: number }> = {}
+          node.data.answers.forEach((a, i) => {
+            if (created.answers[i]) {
+              answerUpdates[a.id] = { backendId: created.answers[i].id }
+            }
+          })
+          updateNodeData(node.id, {
+            backendQuestionId: created.id,
+            answers: node.data.answers.map((a, i) =>
+              created.answers[i] ? { ...a, backendId: created.answers[i].id } : a,
+            ),
+          })
+        } else if (node.data.kind === 'info_page' && !node.data.backendQuestionId) {
+          const req: QuestionCreateRequest = {
+            text: node.data.title || 'New info page',
+            type: 'text',
+          }
+          const created = await questionsService.create(req)
+          updateNodeData(node.id, { backendQuestionId: created.id })
+        }
+      }
+
+      // Re-read nodes after updates
+      const freshNodes = useEditorStore.getState().nodes
+      const freshEdges = useEditorStore.getState().edges
+      const flowUpdate = graphToFlow(freshNodes, freshEdges)
+      updateFlow.mutate(
+        { id: activeFlowId, data: flowUpdate },
+        {
+          onSuccess: (updated) => {
+            selectFlow(updated)
+            setIsSaving(false)
+            toast.success('Saved')
+          },
+          onError: (err) => {
+            setIsSaving(false)
+            toast.error(err.message || 'Save failed')
+          },
         },
-        onError: (err) => toast.error(err.message || 'Save failed'),
-      },
-    )
+      )
+    } catch (err) {
+      setIsSaving(false)
+      toast.error(err instanceof Error ? err.message : 'Failed to create questions')
+    }
   }
 
   const handleExport = () => {
@@ -354,10 +408,10 @@ export function TopBar() {
                 size="sm"
                 className={cn('h-8 gap-1.5', isDirty && 'animate-pulse')}
                 onClick={handleSave}
-                disabled={!activeFlowId || updateFlow.isPending}
+                disabled={!activeFlowId || isSaving || updateFlow.isPending}
               >
                 <Save className="h-3.5 w-3.5" />
-                {updateFlow.isPending ? 'Saving...' : 'Save'}
+                {isSaving || updateFlow.isPending ? 'Saving...' : 'Save'}
               </Button>
             </TooltipTrigger>
             <TooltipContent>Save flow (Ctrl+S)</TooltipContent>
