@@ -65,27 +65,51 @@ export function flowToGraph(flow: FlowResponse): QuizGraph & { quizId: string; q
     }
   })
 
-  const edges: QuizEdge[] = flow.transitions
-    .filter((t) => t.to_question_id !== null)
-    .map((t) => {
-      const sourceNodeId = questionIdMap.get(t.from_question_id)
-      const targetNodeId = questionIdMap.get(t.to_question_id!)
-      if (!sourceNodeId || !targetNodeId) return null
+  const edges: QuizEdge[] = []
 
-      const sourceHandleId = t.answer_ids.length > 0
-        ? answerIdMap.get(t.answer_ids[0]) ?? null
-        : null
+  for (const t of flow.transitions) {
+    const sourceNodeId = questionIdMap.get(t.from_question_id)
+    if (!sourceNodeId) continue
 
-      return {
+    const sourceHandleId = t.answer_ids.length > 0
+      ? answerIdMap.get(t.answer_ids[0]) ?? null
+      : null
+
+    if (t.to_question_id !== null) {
+      const targetNodeId = questionIdMap.get(t.to_question_id)
+      if (!targetNodeId) continue
+      edges.push({
         id: `e-${t.id}`,
         source: sourceNodeId,
         sourceHandle: sourceHandleId,
         target: targetNodeId,
         type: 'conditional' as const,
         data: {},
+      } as QuizEdge)
+    } else {
+      // Transition to null = end of branch → create offer (finish) node
+      const finishId = `_finish_${sourceNodeId}_${sourceHandleId ?? 'default'}`
+      if (!nodes.some((n) => n.id === finishId)) {
+        nodes.push({
+          id: finishId,
+          type: 'offer',
+          position: { x: 0, y: 0 },
+          data: { kind: 'offer' },
+          selectable: false,
+          draggable: false,
+        } as QuizNode)
       }
-    })
-    .filter((e): e is NonNullable<typeof e> => e !== null) as QuizEdge[]
+      edges.push({
+        id: `e-${t.id}`,
+        source: sourceNodeId,
+        sourceHandle: sourceHandleId,
+        target: finishId,
+        type: 'conditional' as const,
+        style: { strokeDasharray: '5 5', opacity: 0.4 },
+        data: {},
+      } as QuizEdge)
+    }
+  }
 
   const layoutedNodes = nodes.length > 0 ? applyDagreLayout(nodes, edges) : nodes
 

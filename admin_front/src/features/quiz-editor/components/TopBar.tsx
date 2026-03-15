@@ -40,9 +40,7 @@ import { FlowHistoryPanel } from './FlowHistoryPanel'
 import { useFlows, useCreateFlow, useUpdateFlow, useDeleteFlow } from '@/hooks/use-flows'
 import { useLogout } from '@/hooks/use-auth'
 import { useAuthStore } from '@/store/auth.store'
-import { graphToFlow, mapQuestionTypeToApi } from '../utils/graph-to-flow'
-import { questionsService } from '@/services/questions.service'
-import type { QuestionUpdateRequest, QuestionAnswerCreateRequest } from '@/types/api'
+import { graphToFlow } from '../utils/graph-to-flow'
 
 function CreateFlowDialog() {
   const [open, setOpen] = useState(false)
@@ -178,49 +176,19 @@ export function TopBar() {
 
   const quizName = activeFlow?.name ?? 'No flow selected'
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!activeFlowId) return
-    try {
-      // First, update all questions that have a backendQuestionId
-      const questionUpdates: Promise<unknown>[] = []
-      for (const node of nodes) {
-        if (node.data.kind === 'question' && node.data.backendQuestionId) {
-          const answers: QuestionAnswerCreateRequest[] = node.data.answers.map((a) => ({
-            text: a.text,
-            attributes: a.attributes,
-          }))
-          const update: QuestionUpdateRequest = {
-            text: node.data.text,
-            type: mapQuestionTypeToApi(node.data.questionType) as QuestionUpdateRequest['type'],
-            requires: node.data.requires,
-            answers,
-          }
-          questionUpdates.push(questionsService.update(node.data.backendQuestionId, update))
-        } else if (node.data.kind === 'info_page' && node.data.backendQuestionId) {
-          const update: QuestionUpdateRequest = {
-            text: node.data.title,
-            type: 'text',
-          }
-          questionUpdates.push(questionsService.update(node.data.backendQuestionId, update))
-        }
-      }
-      await Promise.all(questionUpdates)
-
-      // Then save the flow (transitions + question_ids)
-      const flowUpdate = graphToFlow(nodes, edges)
-      updateFlow.mutate(
-        { id: activeFlowId, data: flowUpdate },
-        {
-          onSuccess: (updated) => {
-            selectFlow(updated)
-            toast.success('Saved')
-          },
-          onError: (err) => toast.error(err.message || 'Save failed'),
+    const flowUpdate = graphToFlow(nodes, edges)
+    updateFlow.mutate(
+      { id: activeFlowId, data: flowUpdate },
+      {
+        onSuccess: (updated) => {
+          selectFlow(updated)
+          toast.success('Saved')
         },
-      )
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update questions')
-    }
+        onError: (err) => toast.error(err.message || 'Save failed'),
+      },
+    )
   }
 
   const handleExport = () => {

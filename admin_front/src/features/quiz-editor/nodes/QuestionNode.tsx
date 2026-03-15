@@ -19,6 +19,7 @@ import { useEditorStore } from '../store/editor.store'
 import { QUESTION_TYPES } from '../constants'
 import { AttributeBadge } from '../components/AttributeBadge'
 import { DroppableZone } from '../components/DroppableZone'
+import { flushSaveQuestion, useDebouncedSaveQuestion } from '../hooks/use-auto-save-question'
 import type { QuestionNodeData } from '../types'
 
 type Props = NodeProps & { data: QuestionNodeData }
@@ -29,8 +30,10 @@ export function QuestionNode({ id, data, selected }: Props) {
   const addAnswer = useEditorStore((s) => s.addAnswer)
   const removeAnswer = useEditorStore((s) => s.removeAnswer)
   const updateAnswer = useEditorStore((s) => s.updateAnswer)
+  const debouncedSave = useDebouncedSaveQuestion()
 
   const isChoiceType = data.questionType === 'single_choice' || data.questionType === 'multi_choice'
+  const backendId = data.backendQuestionId
 
   const handleRemoveAttribute = (answerId: string, attrId: number) => {
     const answer = data.answers.find((a) => a.id === answerId)
@@ -38,6 +41,7 @@ export function QuestionNode({ id, data, selected }: Props) {
     updateAnswer(id, answerId, {
       attributes: answer.attributes.filter((a) => a !== attrId),
     })
+    flushSaveQuestion(backendId)
   }
 
   return (
@@ -54,7 +58,10 @@ export function QuestionNode({ id, data, selected }: Props) {
               <Switch
                 id={`requires-${id}`}
                 checked={data.requires}
-                onCheckedChange={(v) => updateNodeData(id, { requires: v })}
+                onCheckedChange={(v) => {
+                  updateNodeData(id, { requires: v })
+                  flushSaveQuestion(backendId)
+                }}
                 className="scale-75"
               />
               <Label htmlFor={`requires-${id}`} className="text-[10px] text-muted-foreground cursor-pointer">
@@ -77,12 +84,18 @@ export function QuestionNode({ id, data, selected }: Props) {
             className="nodrag nowheel min-h-[48px] resize-none text-sm"
             placeholder="Enter question text..."
             defaultValue={data.text}
-            onBlur={(e) => updateNodeData(id, { text: e.target.value })}
+            onBlur={(e) => {
+              updateNodeData(id, { text: e.target.value })
+              flushSaveQuestion(backendId)
+            }}
           />
 
           <Select
             value={data.questionType}
-            onValueChange={(v) => updateNodeData(id, { questionType: v as QuestionNodeData['questionType'] })}
+            onValueChange={(v) => {
+              updateNodeData(id, { questionType: v as QuestionNodeData['questionType'] })
+              flushSaveQuestion(backendId)
+            }}
           >
             <SelectTrigger className="nodrag nowheel h-8 text-xs">
               <SelectValue />
@@ -109,13 +122,19 @@ export function QuestionNode({ id, data, selected }: Props) {
                       className="nodrag nowheel h-7 text-xs flex-1 min-w-0"
                       defaultValue={answer.text}
                       placeholder="Answer text"
-                      onBlur={(e) => updateAnswer(id, answer.id, { text: e.target.value })}
+                      onBlur={(e) => {
+                        updateAnswer(id, answer.id, { text: e.target.value })
+                        flushSaveQuestion(backendId)
+                      }}
                     />
                     <Button
                       variant="ghost"
                       size="icon"
                       className="nodrag h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-                      onClick={() => removeAnswer(id, answer.id)}
+                      onClick={() => {
+                        removeAnswer(id, answer.id)
+                        flushSaveQuestion(backendId)
+                      }}
                     >
                       <Trash2 className="h-3 w-3" />
                     </Button>
@@ -145,7 +164,10 @@ export function QuestionNode({ id, data, selected }: Props) {
                 variant="ghost"
                 size="sm"
                 className="nodrag h-7 w-full text-xs text-muted-foreground"
-                onClick={() => addAnswer(id)}
+                onClick={() => {
+                  addAnswer(id)
+                  debouncedSave(backendId)
+                }}
               >
                 <Plus className="h-3 w-3 mr-1" />
                 Add answer

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { useEditorStore } from '../store/editor.store'
+import { flushSaveInfoPage } from '../hooks/use-auto-save-question'
 import type { InfoPageNodeData } from '../types'
 
 type Props = NodeProps & { data: InfoPageNodeData }
@@ -14,6 +15,7 @@ type Props = NodeProps & { data: InfoPageNodeData }
 export function InfoPageNode({ id, data, selected }: Props) {
   const updateNodeData = useEditorStore((s) => s.updateNodeData)
   const removeNode = useEditorStore((s) => s.removeNode)
+  const backendId = data.backendQuestionId
 
   return (
     <div className={cn('w-[280px]', selected && 'ring-2 ring-primary rounded-lg')}>
@@ -39,13 +41,19 @@ export function InfoPageNode({ id, data, selected }: Props) {
             className="nodrag nowheel h-8 text-sm font-medium"
             placeholder="Page title..."
             defaultValue={data.title}
-            onBlur={(e) => updateNodeData(id, { title: e.target.value })}
+            onBlur={(e) => {
+              updateNodeData(id, { title: e.target.value })
+              flushSaveInfoPage(backendId)
+            }}
           />
           <Textarea
             className="nodrag nowheel min-h-[64px] resize-none text-sm"
             placeholder="Motivational message..."
             defaultValue={data.message}
-            onBlur={(e) => updateNodeData(id, { message: e.target.value })}
+            onBlur={(e) => {
+              updateNodeData(id, { message: e.target.value })
+              flushSaveInfoPage(backendId)
+            }}
           />
         </CardContent>
       </Card>

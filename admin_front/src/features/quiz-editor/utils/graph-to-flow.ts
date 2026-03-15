@@ -54,6 +54,8 @@ export function graphToFlow(
 
     if (!sourceNode || !targetNode) continue
     if (sourceNode.data.kind !== 'question' && sourceNode.data.kind !== 'info_page') continue
+    // Skip virtual finish edges (to offer nodes with _finish_ prefix)
+    if (edge.target.startsWith('_finish_')) continue
 
     const fromQuestionId = getBackendQuestionId(sourceNode)
     const toQuestionId = getBackendQuestionId(targetNode)
