@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import {
   ReactFlow,
   Background,
@@ -25,7 +25,19 @@ export function Canvas() {
   const setViewport = useEditorStore((s) => s.setViewport)
   const addNode = useEditorStore((s) => s.addNode)
 
-  const { screenToFlowPosition } = useReactFlow()
+  const quizId = useEditorStore((s) => s.quizId)
+  const autoLayout = useEditorStore((s) => s.autoLayout)
+  const { screenToFlowPosition, fitView } = useReactFlow()
+
+  // Auto-layout and fit view when switching flows
+  const prevQuizId = useRef(quizId)
+  useEffect(() => {
+    if (quizId && quizId !== prevQuizId.current) {
+      autoLayout()
+      requestAnimationFrame(() => fitView({ duration: 300 }))
+    }
+    prevQuizId.current = quizId
+  }, [quizId, autoLayout, fitView])
 
   // Compute finish indicators for leaf nodes
   const { allNodes, allEdges } = useMemo(() => {
