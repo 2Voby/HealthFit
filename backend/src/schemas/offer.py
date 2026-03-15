@@ -11,6 +11,9 @@ class OfferCreateRequest(BaseModel):
         validation_alias=AliasChoices("description", "descripton"),
         serialization_alias="description",
     )
+    wellness_kit_name: str = Field(default="", max_length=180)
+    wellness_kit_image_url: str = Field(default="", max_length=1000)
+    wellness_kit_description: str = Field(default="", max_length=5000)
     price: float = Field(ge=0)
     default: bool = Field(
         default=False,
@@ -35,6 +38,9 @@ class OfferUpdateRequest(BaseModel):
         validation_alias=AliasChoices("description", "descripton"),
         serialization_alias="description",
     )
+    wellness_kit_name: str | None = Field(default=None, max_length=180)
+    wellness_kit_image_url: str | None = Field(default=None, max_length=1000)
+    wellness_kit_description: str | None = Field(default=None, max_length=5000)
     price: float | None = Field(default=None, ge=0)
     default: bool | None = Field(
         default=None,
@@ -55,6 +61,9 @@ class OfferResponse(BaseModel):
     id: int
     name: str
     description: str
+    wellness_kit_name: str
+    wellness_kit_image_url: str
+    wellness_kit_description: str
     price: float
     default: bool
     requires_all: list[int]

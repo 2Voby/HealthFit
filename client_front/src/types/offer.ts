@@ -2,7 +2,11 @@ export interface Offer {
   id: number;
   name: string;
   description: string;
+  wellness_kit_name: string;
+  wellness_kit_image_url: string;
+  wellness_kit_description: string;
   price: number;
+  default: boolean;
   requires_all: number[];
   requires_optional: number[];
   excludes: number[];

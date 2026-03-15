@@ -154,7 +154,6 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         answers=[
             ("Жінка", ["Стать: жінка"]),
             ("Чоловік", ["Стать: чоловік"]),
-            ("Non-binary", ["Стать: non-binary"]),
             ("Не вказувати", ["Стать: не вказано"]),
         ],
     )
@@ -327,6 +326,9 @@ async def bootstrap_mock_data(settings: Settings) -> None:
     async def create_offer(
         name: str,
         description: str,
+        wellness_kit_name: str,
+        wellness_kit_image_url: str,
+        wellness_kit_description: str,
         price: float,
         priority: int,
         default: bool,
@@ -337,6 +339,9 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         offer = await Offer.create(
             name=name,
             description=description,
+            wellness_kit_name=wellness_kit_name,
+            wellness_kit_image_url=wellness_kit_image_url,
+            wellness_kit_description=wellness_kit_description,
             price=price,
             is_default=default,
             priority=priority,
@@ -351,11 +356,10 @@ async def bootstrap_mock_data(settings: Settings) -> None:
 
     await create_offer(
         name="Weight Loss Starter (Home) — 4 тижні",
-        description=(
-            "Digital: план схуднення вдома (20–30 хв)\n"
-            "Physical wellness kit: Home Fat-Burn Kit (resistance bands, скакалка, "
-            "шейкер/пляшка, електроліти + healthy snack)"
-        ),
+        description="Digital: план схуднення вдома (20–30 хв)",
+        wellness_kit_name="Home Fat-Burn Kit",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Home+Fat-Burn+Kit",
+        wellness_kit_description="resistance bands, скакалка, шейкер/пляшка, електроліти + healthy snack",
         price=49.99,
         priority=90,
         default=False,
@@ -365,11 +369,10 @@ async def bootstrap_mock_data(settings: Settings) -> None:
     )
     await create_offer(
         name="Lean Strength Builder (Gym) — силові + прогресія",
-        description=(
-            "Digital: програма для залу\n"
-            "Physical wellness kit: Gym Support Kit (wrist wraps/straps, mini loop band, "
-            "компактний рушник, електроліти/протеїн-снек)"
-        ),
+        description="Digital: програма для залу",
+        wellness_kit_name="Gym Support Kit",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Gym+Support+Kit",
+        wellness_kit_description="wrist wraps/straps, mini loop band, компактний рушник, електроліти/протеїн-снек",
         price=59.99,
         priority=88,
         default=False,
@@ -379,11 +382,10 @@ async def bootstrap_mock_data(settings: Settings) -> None:
     )
     await create_offer(
         name="Low-Impact Fat Burn — “суглоби friendly”",
-        description=(
-            "Digital: low-impact план (коліна/спина friendly)\n"
-            "Physical wellness kit: Joint-Friendly Kit (knee sleeve/бандаж, massage ball, "
-            "mini loop bands, cooling patch/recovery gel)"
-        ),
+        description="Digital: low-impact план (коліна/спина friendly)",
+        wellness_kit_name="Joint-Friendly Kit",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Joint-Friendly+Kit",
+        wellness_kit_description="knee sleeve/бандаж, massage ball, mini loop bands, cooling patch/recovery gel",
         price=54.99,
         priority=86,
         default=False,
@@ -393,11 +395,10 @@ async def bootstrap_mock_data(settings: Settings) -> None:
     )
     await create_offer(
         name="Run Your First 5K (Outdoor) — бігова програма",
-        description=(
-            "Digital: підготовка до 5K (3 рази/тиж)\n"
-            "Physical wellness kit: Runner Starter Kit (electrolytes, reflective armband/safety light, "
-            "blister kit, running belt)"
-        ),
+        description="Digital: підготовка до 5K (3 рази/тиж)",
+        wellness_kit_name="Runner Starter Kit",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Runner+Starter+Kit",
+        wellness_kit_description="electrolytes, reflective armband/safety light, blister kit, running belt",
         price=44.99,
         priority=84,
         default=False,
@@ -407,11 +408,10 @@ async def bootstrap_mock_data(settings: Settings) -> None:
     )
     await create_offer(
         name="Yoga & Mobility (Home) — гнучкість + спина/постава",
-        description=(
-            "Digital: йога/мобільність 10–25 хв\n"
-            "Physical wellness kit: Mobility Kit (travel yoga mat або yoga strap, massage ball, "
-            "mini foam roller)"
-        ),
+        description="Digital: йога/мобільність 10–25 хв",
+        wellness_kit_name="Mobility Kit",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Mobility+Kit",
+        wellness_kit_description="travel yoga mat або yoga strap, massage ball, mini foam roller",
         price=39.99,
         priority=82,
         default=False,
@@ -421,11 +421,10 @@ async def bootstrap_mock_data(settings: Settings) -> None:
     )
     await create_offer(
         name="Stress Reset Program — ментальний ресет + мікрозвички",
-        description=(
-            "Digital: дихання/медитації/антистрес рутини\n"
-            "Physical wellness kit: Calm-Now Kit (eye mask, aroma roll-on/mini candle, tea sticks, "
-            "stress ball/fidget, quick reset card)"
-        ),
+        description="Digital: дихання/медитації/антистрес рутини",
+        wellness_kit_name="Calm-Now Kit",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Calm-Now+Kit",
+        wellness_kit_description="eye mask, aroma roll-on/mini candle, tea sticks, stress ball/fidget, quick reset card",
         price=29.99,
         priority=70,
         default=True,
@@ -435,11 +434,10 @@ async def bootstrap_mock_data(settings: Settings) -> None:
     )
     await create_offer(
         name="Quick Fit Micro-Workouts — 10–15 хв щодня",
-        description=(
-            "Digital: короткі щоденні тренування\n"
-            "Physical wellness kit: Micro-Workout Kit (slider discs, mini loop bands, "
-            "шейкер/пляшка, mini routine card)"
-        ),
+        description="Digital: короткі щоденні тренування",
+        wellness_kit_name="Micro-Workout Kit",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Micro-Workout+Kit",
+        wellness_kit_description="slider discs, mini loop bands, шейкер/пляшка, mini routine card",
         price=34.99,
         priority=95,
         default=False,
