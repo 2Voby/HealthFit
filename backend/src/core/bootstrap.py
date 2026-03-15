@@ -154,7 +154,6 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         answers=[
             ("Жінка", ["Стать: жінка"]),
             ("Чоловік", ["Стать: чоловік"]),
-            ("Non-binary", ["Стать: non-binary"]),
             ("Не вказувати", ["Стать: не вказано"]),
         ],
     )
