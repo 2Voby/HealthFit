@@ -12,6 +12,23 @@ import { MultiChoiceBlock } from "./components/MultiChoiceBlock";
 import { NumberChoiceBlock } from "./components/NumberChoiceBlock";
 import { resolveAnswerByValue } from "@/utils/index";
 
+function calcMaxStepsFromNode(questionId: number, transitions: Flow["transitions"], visited: Set<number> = new Set()): number {
+	if (visited.has(questionId)) return 0;
+	visited.add(questionId);
+
+	const next = transitions.filter((t) => t.from_question_id === questionId);
+	if (next.length === 0) return 0;
+
+	let max = 0;
+	for (const t of next) {
+		if (t.to_question_id === null) continue;
+		const depth = calcMaxStepsFromNode(t.to_question_id, transitions, new Set(visited));
+		if (depth > max) max = depth;
+	}
+
+	return 1 + max;
+}
+
 export default function QuizPage() {
 	const navigate = useNavigate();
 
@@ -22,6 +39,18 @@ export default function QuizPage() {
 	const [answers, setAnswers] = useState<Record<number, number | number[]>>({});
 	const [collectedAttributes, setCollectedAttributes] = useState<number[]>([]);
 	const [invalidQuestionId, setInvalidQuestionId] = useState<number | null>(null);
+
+	useEffect(() => {
+		if (!currentQuestionId || !flow) return;
+		const flowQ = flow.questions.find((q) => q.question.id === currentQuestionId);
+		if (!flowQ) return;
+		const q = flowQ.question;
+		if (q.type === "manual_input" && q.manual_input) {
+			if (answers[q.id] === undefined) {
+				setAnswers((a) => ({ ...a, [q.id]: q.manual_input!.min }));
+			}
+		}
+	}, [currentQuestionId]);
 
 	useEffect(() => {
 		async function load() {
@@ -47,9 +76,9 @@ export default function QuizPage() {
 
 	if (!flow || currentQuestionId === null) return null;
 
-	const sortedQuestions = [...flow.questions].sort((a, b) => a.position - b.position);
-	const totalSteps = sortedQuestions.filter((q) => q.question.type !== "text").length;
-	const stepIndex = history.length;
+	const totalSteps = calcMaxStepsFromNode(flow.start_question_id, flow.transitions);
+	const stepsLeft = calcMaxStepsFromNode(currentQuestionId, flow.transitions);
+	const stepIndex = totalSteps - stepsLeft;
 
 	const currentFlowQ = flow.questions.find((q) => q.question.id === currentQuestionId)!;
 	const currentQ = currentFlowQ.question;
