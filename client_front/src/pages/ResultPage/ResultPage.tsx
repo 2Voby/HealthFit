@@ -80,6 +80,7 @@ export default function ResultPage() {
 				setLoading(false);
 				return;
 			}
+			console.log(attributes);
 			const result = await getSuggestedOffer(attributes);
 			if (result.success) setOfferData(result.data);
 			setLoading(false);
@@ -140,9 +141,11 @@ export default function ResultPage() {
 											<Clock3 className="h-3.5 w-3.5" />
 											{topOffer.offer.price} USD
 										</span>
-										<span className="inline-flex items-center gap-1.5 rounded-full border border-[#cfe3d7] bg-[#f6fcf8] px-3 py-1.5 text-[11px] font-medium text-[#356c4d]">
-											Збіг: {Math.round(topOffer.optional_coverage * 100)}%
-										</span>
+										{topOffer.optional_coverage > 0 && (
+											<span className="inline-flex items-center gap-1.5 rounded-full border border-[#cfe3d7] bg-[#f6fcf8] px-3 py-1.5 text-[11px] font-medium text-[#356c4d]">
+												Збіг: {Math.round(topOffer.optional_coverage * 100)}%
+											</span>
+										)}
 									</div>
 
 									<div className="mt-4 space-y-1">
