@@ -28,14 +28,13 @@ export interface FlowQuestion {
 export interface Transition {
   id: number;
   from_question_id: number;
-  to_question_id: number;
+  to_question_id: number | null;
   condition_type: "always" | "answer_any" | "answer_all";
   answer_ids: number[];
   priority: number;
   created_at: string;
   updated_at: string;
 }
-
 export interface Flow {
   id: number;
   name: string;
