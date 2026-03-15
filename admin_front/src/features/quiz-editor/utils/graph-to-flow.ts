@@ -60,12 +60,18 @@ export function graphToFlow(
     const fromQuestionId = getBackendQuestionId(sourceNode)
     const toQuestionId = getBackendQuestionId(targetNode)
 
-    if (fromQuestionId === undefined) continue
+    if (fromQuestionId === undefined || toQuestionId === undefined) continue
 
     const answerIds: number[] = []
     if (edge.sourceHandle) {
       const backendAnswerId = answerBackendIdMap.get(edge.sourceHandle)
-      if (backendAnswerId !== undefined) answerIds.push(backendAnswerId)
+      if (backendAnswerId !== undefined) {
+        answerIds.push(backendAnswerId)
+      } else {
+        // sourceHandle exists but has no backend ID — skip this transition
+        // to avoid saving answer_any with empty answer_ids
+        continue
+      }
     }
 
     transitions.push({
