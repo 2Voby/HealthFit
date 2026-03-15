@@ -4,7 +4,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Canvas } from '../components/Canvas'
 import { NodePalette } from '../components/NodePalette'
 import { TopBar } from '../components/TopBar'
-import { AttributesPanel } from '../components/AttributesPanel'
+import { RightPanel } from '../components/RightPanel'
 import { DndContextWrapper } from '../components/DndContext'
 import { useFlowStore } from '../store/flow.store'
 import { useFlows } from '@/hooks/use-flows'
@@ -34,7 +34,7 @@ export function QuizEditorPage() {
                 <Canvas />
               </ErrorBoundary>
             </div>
-            <AttributesPanel />
+            <RightPanel />
           </div>
         </div>
       </ReactFlowProvider>
