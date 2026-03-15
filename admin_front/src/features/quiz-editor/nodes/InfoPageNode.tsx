@@ -1,5 +1,5 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Copy } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,7 @@ type Props = NodeProps & { data: InfoPageNodeData }
 export function InfoPageNode({ id, data, selected }: Props) {
   const updateNodeData = useEditorStore((s) => s.updateNodeData)
   const removeNode = useEditorStore((s) => s.removeNode)
+  const duplicateNode = useEditorStore((s) => s.duplicateNode)
   const backendId = data.backendQuestionId
 
   return (
@@ -26,14 +27,24 @@ export function InfoPageNode({ id, data, selected }: Props) {
           <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
             Info Page
           </Badge>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="nodrag h-6 w-6 text-muted-foreground hover:text-destructive"
-            onClick={() => removeNode(id)}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="nodrag h-6 w-6 text-muted-foreground hover:text-green-500"
+              onClick={() => duplicateNode(id)}
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="nodrag h-6 w-6 text-muted-foreground hover:text-destructive"
+              onClick={() => removeNode(id)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         </CardHeader>
 
         <CardContent className="space-y-2 px-3 pb-3">

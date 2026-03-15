@@ -33,6 +33,7 @@ interface EditorState {
   onConnect: OnConnect
 
   addNode: (kind: NodeKind, position: { x: number; y: number }) => void
+  duplicateNode: (nodeId: string) => void
   updateNodeData: (nodeId: string, data: Partial<QuizNodeData>) => void
   removeNode: (nodeId: string) => void
 
@@ -117,6 +118,36 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
 
     set((s) => ({ nodes: [...s.nodes, node], isDirty: true }))
+  },
+
+  duplicateNode: (nodeId) => {
+    const { nodes } = get()
+    const source = nodes.find((n) => n.id === nodeId)
+    if (!source) return
+
+    const newId = generateId()
+    const clonedData = JSON.parse(JSON.stringify(source.data)) as QuizNodeData
+
+    // Generate new IDs for answers and strip backend IDs (it's a new node)
+    if (clonedData.kind === 'question') {
+      clonedData.answers = clonedData.answers.map((a) => ({
+        ...a,
+        id: generateId(),
+        backendId: undefined,
+      }))
+      clonedData.backendQuestionId = undefined
+    } else if (clonedData.kind === 'info_page') {
+      clonedData.backendQuestionId = undefined
+    }
+
+    const newNode: QuizNode = {
+      id: newId,
+      type: source.type,
+      position: { x: source.position.x + 50, y: source.position.y + 80 },
+      data: clonedData,
+    }
+
+    set((s) => ({ nodes: [...s.nodes, newNode], isDirty: true }))
   },
 
   updateNodeData: (nodeId, data) => {

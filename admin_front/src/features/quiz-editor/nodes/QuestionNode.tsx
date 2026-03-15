@@ -1,5 +1,5 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
-import { Trash2, Plus, GripVertical } from 'lucide-react'
+import { Trash2, Plus, GripVertical, Copy } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -27,6 +27,7 @@ type Props = NodeProps & { data: QuestionNodeData }
 export function QuestionNode({ id, data, selected }: Props) {
   const updateNodeData = useEditorStore((s) => s.updateNodeData)
   const removeNode = useEditorStore((s) => s.removeNode)
+  const duplicateNode = useEditorStore((s) => s.duplicateNode)
   const addAnswer = useEditorStore((s) => s.addAnswer)
   const removeAnswer = useEditorStore((s) => s.removeAnswer)
   const updateAnswer = useEditorStore((s) => s.updateAnswer)
@@ -68,6 +69,14 @@ export function QuestionNode({ id, data, selected }: Props) {
                 Required
               </Label>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="nodrag h-6 w-6 text-muted-foreground hover:text-blue-500"
+              onClick={() => duplicateNode(id)}
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
