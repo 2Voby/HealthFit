@@ -1,17 +1,31 @@
 import type { QuizNode, QuizEdge } from '../types'
 import type { FlowUpdateRequest, FlowTransitionCreateRequest } from '@/types/api'
 
+function mapQuestionTypeToApi(frontendType: string): string {
+  switch (frontendType) {
+    case 'single_choice': return 'singe_choise'
+    case 'multi_choice': return 'multiple_choise'
+    case 'input_number': return 'manual_input'
+    case 'input_text': return 'text'
+    default: return 'singe_choise'
+  }
+}
+
 export function graphToFlow(
   nodes: QuizNode[],
   edges: QuizEdge[],
 ): FlowUpdateRequest {
-  // Build maps for quick lookup
   const nodeById = new Map(nodes.map((n) => [n.id, n]))
 
-  // Collect question IDs from nodes that have a backendQuestionId
-  const question_ids: number[] = nodes
-    .filter((n) => n.data.kind === 'question' && n.data.backendQuestionId !== undefined)
-    .map((n) => (n.data as { backendQuestionId: number }).backendQuestionId)
+  // Collect question IDs from question and info_page nodes
+  const question_ids: number[] = []
+  for (const node of nodes) {
+    if (node.data.kind === 'question' && node.data.backendQuestionId !== undefined) {
+      question_ids.push(node.data.backendQuestionId)
+    } else if (node.data.kind === 'info_page' && node.data.backendQuestionId !== undefined) {
+      question_ids.push(node.data.backendQuestionId)
+    }
+  }
 
   // Build answer ID map: frontendAnswerId -> backendAnswerId
   const answerBackendIdMap = new Map<string, number>()
@@ -25,6 +39,13 @@ export function graphToFlow(
     }
   }
 
+  // Helper to get backendQuestionId from any node kind
+  function getBackendQuestionId(node: QuizNode): number | undefined {
+    if (node.data.kind === 'question') return node.data.backendQuestionId
+    if (node.data.kind === 'info_page') return node.data.backendQuestionId
+    return undefined
+  }
+
   // Build transitions from edges
   const transitions: FlowTransitionCreateRequest[] = []
   for (const edge of edges) {
@@ -32,11 +53,10 @@ export function graphToFlow(
     const targetNode = nodeById.get(edge.target)
 
     if (!sourceNode || !targetNode) continue
-    if (sourceNode.data.kind !== 'question') continue
+    if (sourceNode.data.kind !== 'question' && sourceNode.data.kind !== 'info_page') continue
 
-    const fromQuestionId = sourceNode.data.backendQuestionId
-    const toQuestionId =
-      targetNode.data.kind === 'question' ? targetNode.data.backendQuestionId : undefined
+    const fromQuestionId = getBackendQuestionId(sourceNode)
+    const toQuestionId = getBackendQuestionId(targetNode)
 
     if (fromQuestionId === undefined) continue
 
@@ -57,3 +77,5 @@ export function graphToFlow(
 
   return { question_ids, transitions }
 }
+
+export { mapQuestionTypeToApi }

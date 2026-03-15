@@ -2,9 +2,9 @@ import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent } from 
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { useEditorStore } from '../store/editor.store'
-import { parseAttributeName } from '../store/attributes.store'
 import { useQueryClient } from '@tanstack/react-query'
 import type { AttributesListResponse } from '@/types/api'
+import { offerFieldRegistry } from './RightPanel'
 
 interface DragData {
   type: 'attribute'
@@ -17,7 +17,12 @@ interface DropAnswerData {
   answerId: string
 }
 
-type DropData = DropAnswerData
+interface DropOfferFieldData {
+  type: 'offer-field'
+  zoneId: string
+}
+
+type DropData = DropAnswerData | DropOfferFieldData
 
 export function DndContextWrapper({ children }: { children: React.ReactNode }) {
   const [activeAttribute, setActiveAttribute] = useState<{ id: number; name: string } | null>(null)
@@ -28,8 +33,7 @@ export function DndContextWrapper({ children }: { children: React.ReactNode }) {
     const cached = qc.getQueryData<AttributesListResponse>(['attributes', 'list', { limit: 200 }])
     const attr = cached?.items.find((a) => a.id === id)
     if (!attr) return String(id)
-    const { key, value } = parseAttributeName(attr.name)
-    return `${key}: ${value}`
+    return attr.name
   }
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -61,6 +65,9 @@ export function DndContextWrapper({ children }: { children: React.ReactNode }) {
       store.updateAnswer(dropData.nodeId, dropData.answerId, {
         attributes: [...answer.attributes, attrId],
       })
+    } else if (dropData.type === 'offer-field') {
+      const setter = offerFieldRegistry.get(dropData.zoneId)
+      setter?.(attrId)
     }
   }
 

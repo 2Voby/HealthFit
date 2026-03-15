@@ -24,6 +24,7 @@ export interface InfoPageNodeData {
   kind: 'info_page'
   title: string
   message: string
+  backendQuestionId?: number
 }
 
 export interface OfferNodeData {

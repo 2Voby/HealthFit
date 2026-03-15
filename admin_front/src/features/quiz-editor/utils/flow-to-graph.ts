@@ -1,4 +1,4 @@
-import type { FlowResponse } from '@/types/api'
+import type { FlowResponse, FlowQuestionResponse } from '@/types/api'
 import type { QuizGraph, QuizNode, QuizEdge, QuestionNodeData, Answer } from '../types'
 import { generateId } from './id'
 import { applyDagreLayout } from './dag'
@@ -8,9 +8,12 @@ function mapQuestionType(apiType: string): QuestionNodeData['questionType'] {
     case 'singe_choise': return 'single_choice'
     case 'multiple_choise': return 'multi_choice'
     case 'manual_input': return 'input_number'
-    case 'text': return 'input_text'
     default: return 'single_choice'
   }
+}
+
+function isInfoPage(fq: FlowQuestionResponse): boolean {
+  return fq.question.type === 'text'
 }
 
 export function flowToGraph(flow: FlowResponse): QuizGraph & { quizId: string; quizName: string } {
@@ -20,6 +23,21 @@ export function flowToGraph(flow: FlowResponse): QuizGraph & { quizId: string; q
   const nodes: QuizNode[] = flow.questions.map((fq) => {
     const nodeId = `q-${fq.question_id}`
     questionIdMap.set(fq.question_id, nodeId)
+
+    // API type 'text' maps to info_page node
+    if (isInfoPage(fq)) {
+      return {
+        id: nodeId,
+        type: 'info_page' as const,
+        position: { x: 0, y: 0 },
+        data: {
+          kind: 'info_page' as const,
+          title: fq.question.text,
+          message: '',
+          backendQuestionId: fq.question_id,
+        },
+      }
+    }
 
     const answers: Answer[] = fq.question.answers.map((a) => {
       const answerId = generateId()

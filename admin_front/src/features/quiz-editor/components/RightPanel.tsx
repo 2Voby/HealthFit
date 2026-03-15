@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react'
-import { useDraggable } from '@dnd-kit/core'
+import { useState } from 'react'
+import { useDroppable } from '@dnd-kit/core'
 import {
   ChevronLeft, ChevronRight, Plus, Trash2, GripVertical,
-  ChevronDown, ChevronUp, Pencil, Check, X,
+  Pencil, Check, X,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button } from '@/components/ui/button'
@@ -10,22 +10,15 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
-import { parseAttributeName } from '../store/attributes.store'
 import { useAttributes, useCreateAttribute, useDeleteAttribute } from '@/hooks/use-attributes'
 import { useOffers, useCreateOffer, useUpdateOffer, useDeleteOffer } from '@/hooks/use-offers'
 import { AttributeBadge } from './AttributeBadge'
+import { useDraggable } from '@dnd-kit/core'
 import type { AttributeResponse, OfferResponse } from '@/types/api'
 
 // ─── Attributes section ──────────────────────────────────────
 
-function DraggableAttributeValue({
-  attribute,
-  onRemove,
-}: {
-  attribute: AttributeResponse
-  onRemove: (id: number) => void
-}) {
-  const { value } = parseAttributeName(attribute.name)
+function DraggableAttribute({ attribute, onRemove }: { attribute: AttributeResponse; onRemove: (id: number) => void }) {
   const { attributes: dragAttrs, listeners, setNodeRef, isDragging } = useDraggable({
     id: `attr-${attribute.id}`,
     data: { type: 'attribute', attributeId: attribute.id },
@@ -43,7 +36,7 @@ function DraggableAttributeValue({
       {...dragAttrs}
     >
       <GripVertical className="h-2.5 w-2.5 shrink-0 text-muted-foreground/40" />
-      <span className="flex-1 truncate text-muted-foreground">{value}</span>
+      <span className="flex-1 truncate text-muted-foreground">{attribute.name}</span>
       <Button
         variant="ghost"
         size="icon"
@@ -56,143 +49,81 @@ function DraggableAttributeValue({
   )
 }
 
-function AttributeGroup({
-  groupKey, items, onAddValue, onRemove,
-}: {
-  groupKey: string
-  items: AttributeResponse[]
-  onAddValue: (key: string, value: string) => void
-  onRemove: (id: number) => void
-}) {
-  const [expanded, setExpanded] = useState(true)
-  const [addingValue, setAddingValue] = useState(false)
-  const [newValue, setNewValue] = useState('')
+// ─── Offer form drop zone ─────────────────────────────────────
 
-  const handleAddValue = () => {
-    if (newValue.trim()) {
-      onAddValue(groupKey, newValue.trim())
-      setNewValue('')
-      setAddingValue(false)
-    }
-  }
+// Registry: maps droppable zone ID → setter fn, so DndContext can call it on drop
+export const offerFieldRegistry = new Map<string, (id: number) => void>()
 
-  return (
-    <div className="space-y-0.5">
-      <div className="group flex items-center gap-1 px-2 py-1">
-        <button
-          className="flex items-center gap-1 flex-1 min-w-0 text-left"
-          onClick={() => setExpanded(!expanded)}
-        >
-          {expanded
-            ? <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
-            : <ChevronUp className="h-3 w-3 shrink-0 text-muted-foreground" />}
-          <span className="text-xs font-medium truncate">{groupKey}</span>
-          <span className="text-[10px] text-muted-foreground">({items.length})</span>
-        </button>
-        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => setAddingValue(true)}>
-            <Plus className="h-2.5 w-2.5" />
-          </Button>
-          <Button
-            variant="ghost" size="icon" className="h-4 w-4 hover:text-destructive"
-            onClick={() => { for (const item of items) onRemove(item.id) }}
-          >
-            <Trash2 className="h-2.5 w-2.5" />
-          </Button>
-        </div>
-      </div>
-
-      {expanded && (
-        <div className="pl-3 space-y-0.5">
-          {items.map((attr) => (
-            <DraggableAttributeValue key={attr.id} attribute={attr} onRemove={onRemove} />
-          ))}
-          {addingValue && (
-            <div className="flex items-center gap-1 px-1 py-0.5">
-              <Input
-                className="h-5 text-[11px] flex-1"
-                placeholder="value..."
-                value={newValue}
-                onChange={(e) => setNewValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAddValue()
-                  if (e.key === 'Escape') { setAddingValue(false); setNewValue('') }
-                }}
-                autoFocus
-              />
-              <Button variant="ghost" size="icon" className="h-4 w-4" onClick={handleAddValue}>
-                <Plus className="h-2.5 w-2.5" />
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─── Offers section ──────────────────────────────────────────
-
-function AttributeMultiSelect({
+function DroppableAttributeField({
+  zoneId,
   label,
   selectedIds,
   onChange,
 }: {
+  zoneId: string
   label: string
   selectedIds: number[]
   onChange: (ids: number[]) => void
 }) {
-  const { data } = useAttributes({ limit: 200 })
-  const attributes = data?.items ?? []
+  const { setNodeRef, isOver } = useDroppable({
+    id: zoneId,
+    data: { type: 'offer-field', zoneId },
+  })
 
-  const toggle = (id: number) => {
-    onChange(
-      selectedIds.includes(id)
-        ? selectedIds.filter((x) => x !== id)
-        : [...selectedIds, id],
-    )
-  }
+  // Register setter so DndContext can push into this field
+  offerFieldRegistry.set(zoneId, (attrId: number) => {
+    if (!selectedIds.includes(attrId)) {
+      onChange([...selectedIds, attrId])
+    }
+  })
 
   return (
     <div className="space-y-1">
       <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</Label>
-      <div className="flex flex-wrap gap-1 min-h-[22px] rounded border p-1">
+      <div
+        ref={setNodeRef}
+        className={cn(
+          'flex flex-wrap gap-1 min-h-[28px] rounded border p-1 transition-colors',
+          isOver ? 'border-primary bg-primary/5' : 'border-input',
+        )}
+      >
         {selectedIds.map((id) => (
-          <AttributeBadge key={id} attributeId={id} showKey onRemove={() => toggle(id)} />
+          <AttributeBadge
+            key={id}
+            attributeId={id}
+            showKey
+            onRemove={() => onChange(selectedIds.filter((x) => x !== id))}
+          />
         ))}
-      </div>
-      <div className="flex flex-wrap gap-1">
-        {attributes
-          .filter((a) => !selectedIds.includes(a.id))
-          .map((a) => {
-            const { value } = parseAttributeName(a.name)
-            return (
-              <button
-                key={a.id}
-                onClick={() => toggle(a.id)}
-                title={a.name}
-                className="text-[10px] px-1.5 py-0.5 rounded border border-dashed hover:bg-accent transition-colors"
-              >
-                {value}
-              </button>
-            )
-          })}
+        {selectedIds.length === 0 && (
+          <span className="text-[10px] text-muted-foreground/50 self-center px-1">
+            перетягніть атрибут сюди
+          </span>
+        )}
       </div>
     </div>
   )
 }
 
+// ─── Offer form ───────────────────────────────────────────────
+
+interface OfferFormData {
+  name: string; description: string; price: number; priority: number
+  default: boolean
+  wellness_kit_name: string; wellness_kit_image_url: string; wellness_kit_description: string
+  requires_all: number[]; requires_optional: number[]; excludes: number[]
+}
+
 function OfferForm({
+  formId,
   initial,
   onSave,
   onCancel,
   isSaving,
 }: {
+  formId: string
   initial?: OfferResponse
-  onSave: (data: {
-    name: string; description: string; price: number; priority: number
-    requires_all: number[]; requires_optional: number[]; excludes: number[]
-  }) => void
+  onSave: (data: OfferFormData) => void
   onCancel: () => void
   isSaving: boolean
 }) {
@@ -200,6 +131,10 @@ function OfferForm({
   const [description, setDescription] = useState(initial?.description ?? '')
   const [price, setPrice] = useState(String(initial?.price ?? 0))
   const [priority, setPriority] = useState(String(initial?.priority ?? 0))
+  const [isDefault, setIsDefault] = useState(initial?.default ?? false)
+  const [wkName, setWkName] = useState(initial?.wellness_kit_name ?? '')
+  const [wkImageUrl, setWkImageUrl] = useState(initial?.wellness_kit_image_url ?? '')
+  const [wkDescription, setWkDescription] = useState(initial?.wellness_kit_description ?? '')
   const [requiresAll, setRequiresAll] = useState<number[]>(initial?.requires_all ?? [])
   const [requiresOptional, setRequiresOptional] = useState<number[]>(initial?.requires_optional ?? [])
   const [excludes, setExcludes] = useState<number[]>(initial?.excludes ?? [])
@@ -211,6 +146,10 @@ function OfferForm({
         onSave({
           name: name.trim(), description: description.trim(),
           price: parseFloat(price) || 0, priority: parseInt(priority) || 0,
+          default: isDefault,
+          wellness_kit_name: wkName.trim(),
+          wellness_kit_image_url: wkImageUrl.trim(),
+          wellness_kit_description: wkDescription.trim(),
           requires_all: requiresAll, requires_optional: requiresOptional, excludes,
         })
       }}
@@ -245,9 +184,56 @@ function OfferForm({
           onChange={(e) => setPriority(e.target.value)}
         />
       </div>
-      <AttributeMultiSelect label="Requires All" selectedIds={requiresAll} onChange={setRequiresAll} />
-      <AttributeMultiSelect label="Requires Optional" selectedIds={requiresOptional} onChange={setRequiresOptional} />
-      <AttributeMultiSelect label="Excludes" selectedIds={excludes} onChange={setExcludes} />
+      <label className="flex items-center gap-2 text-xs cursor-pointer">
+        <input
+          type="checkbox"
+          checked={isDefault}
+          onChange={(e) => setIsDefault(e.target.checked)}
+          className="h-3.5 w-3.5 rounded"
+        />
+        За замовчуванням
+      </label>
+
+      <Separator />
+      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Wellness Kit</Label>
+      <Input
+        className="h-7 text-xs"
+        placeholder="Назва кіту"
+        value={wkName}
+        onChange={(e) => setWkName(e.target.value)}
+      />
+      <Input
+        className="h-7 text-xs"
+        placeholder="URL зображення"
+        value={wkImageUrl}
+        onChange={(e) => setWkImageUrl(e.target.value)}
+      />
+      <Input
+        className="h-7 text-xs"
+        placeholder="Опис кіту"
+        value={wkDescription}
+        onChange={(e) => setWkDescription(e.target.value)}
+      />
+
+      <Separator />
+      <DroppableAttributeField
+        zoneId={`${formId}-requires_all`}
+        label="Requires All"
+        selectedIds={requiresAll}
+        onChange={setRequiresAll}
+      />
+      <DroppableAttributeField
+        zoneId={`${formId}-requires_optional`}
+        label="Requires Optional"
+        selectedIds={requiresOptional}
+        onChange={setRequiresOptional}
+      />
+      <DroppableAttributeField
+        zoneId={`${formId}-excludes`}
+        label="Excludes"
+        selectedIds={excludes}
+        onChange={setExcludes}
+      />
       <div className="flex gap-1">
         <Button type="submit" size="sm" className="h-6 flex-1 text-[11px]" disabled={isSaving}>
           <Check className="h-3 w-3 mr-1" />
@@ -261,6 +247,8 @@ function OfferForm({
   )
 }
 
+// ─── Offer item ───────────────────────────────────────────────
+
 function OfferItem({ offer }: { offer: OfferResponse }) {
   const [editing, setEditing] = useState(false)
   const updateOffer = useUpdateOffer()
@@ -269,6 +257,7 @@ function OfferItem({ offer }: { offer: OfferResponse }) {
   if (editing) {
     return (
       <OfferForm
+        formId={`edit-${offer.id}`}
         initial={offer}
         onSave={(data) => updateOffer.mutate({ id: offer.id, data }, { onSuccess: () => setEditing(false) })}
         onCancel={() => setEditing(false)}
@@ -301,42 +290,28 @@ function OfferItem({ offer }: { offer: OfferResponse }) {
   )
 }
 
-// ─── Combined panel ──────────────────────────────────────────
+// ─── Combined panel ───────────────────────────────────────────
 
 export function RightPanel() {
   const [collapsed, setCollapsed] = useState(false)
 
-  // Attributes state
-  const [addingKey, setAddingKey] = useState(false)
-  const [newKey, setNewKey] = useState('')
-  const [newFirstValue, setNewFirstValue] = useState('')
+  // Attributes
+  const [addingAttr, setAddingAttr] = useState(false)
+  const [newAttrName, setNewAttrName] = useState('')
   const { data: attributesData } = useAttributes({ limit: 200 })
   const attributes = attributesData?.items ?? []
   const createAttribute = useCreateAttribute()
   const deleteAttribute = useDeleteAttribute()
 
-  const grouped = useMemo(() => {
-    const groups = new Map<string, AttributeResponse[]>()
-    for (const attr of attributes) {
-      const { key } = parseAttributeName(attr.name)
-      const group = groups.get(key) ?? []
-      group.push(attr)
-      groups.set(key, group)
-    }
-    return groups
-  }, [attributes])
-
-  const handleAddValue = (key: string, value: string) => {
-    createAttribute.mutate({ name: `${key}-${value}` })
-  }
-  const handleAddKey = () => {
-    if (newKey.trim() && newFirstValue.trim()) {
-      createAttribute.mutate({ name: `${newKey.trim()}-${newFirstValue.trim()}` })
-      setNewKey(''); setNewFirstValue(''); setAddingKey(false)
-    }
+  const handleAddAttribute = () => {
+    const trimmed = newAttrName.trim()
+    if (!trimmed) return
+    createAttribute.mutate({ name: trimmed })
+    setNewAttrName('')
+    setAddingAttr(false)
   }
 
-  // Offers state
+  // Offers
   const [creatingOffer, setCreatingOffer] = useState(false)
   const { data: offersData } = useOffers({ limit: 200 })
   const offers = offersData?.items ?? []
@@ -384,56 +359,43 @@ export function RightPanel() {
               </span>
               <Button
                 variant="ghost" size="icon" className="h-6 w-6"
-                onClick={() => setAddingKey(!addingKey)}
-                title="Додати групу атрибутів"
+                onClick={() => setAddingAttr(!addingAttr)}
+                title="Додати атрибут"
               >
                 <Plus className="h-3.5 w-3.5" />
               </Button>
             </div>
 
-            {addingKey && (
-              <div className="px-2 pb-2 space-y-1 shrink-0">
+            {addingAttr && (
+              <div className="px-2 pb-2 flex gap-1 shrink-0">
                 <Input
-                  className="h-6 text-xs"
-                  placeholder="Ключ (наприклад age)"
-                  value={newKey}
-                  onChange={(e) => setNewKey(e.target.value)}
+                  className="h-6 text-xs flex-1"
+                  placeholder="наприклад age-18-25"
+                  value={newAttrName}
+                  onChange={(e) => setNewAttrName(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Escape') { setAddingKey(false); setNewKey(''); setNewFirstValue('') }
+                    if (e.key === 'Enter') handleAddAttribute()
+                    if (e.key === 'Escape') { setAddingAttr(false); setNewAttrName('') }
                   }}
                   autoFocus
                 />
-                <Input
-                  className="h-6 text-xs"
-                  placeholder="Перше значення (наприклад 11-20)"
-                  value={newFirstValue}
-                  onChange={(e) => setNewFirstValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleAddKey()
-                    if (e.key === 'Escape') { setAddingKey(false); setNewKey(''); setNewFirstValue('') }
-                  }}
-                />
-                <div className="flex gap-1">
-                  <Button variant="default" size="sm" className="h-5 flex-1 text-[11px]" onClick={handleAddKey}>
-                    Додати
-                  </Button>
-                  <Button
-                    variant="ghost" size="sm" className="h-5 text-[11px]"
-                    onClick={() => { setAddingKey(false); setNewKey(''); setNewFirstValue('') }}
-                  >
-                    Скасувати
-                  </Button>
-                </div>
+                <Button variant="default" size="icon" className="h-6 w-6 shrink-0" onClick={handleAddAttribute}>
+                  <Check className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="ghost" size="icon" className="h-6 w-6 shrink-0"
+                  onClick={() => { setAddingAttr(false); setNewAttrName('') }}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
               </div>
             )}
 
-            <div className="overflow-y-auto flex-1 p-1 space-y-1">
-              {Array.from(grouped.entries()).map(([key, items]) => (
-                <AttributeGroup
-                  key={key}
-                  groupKey={key}
-                  items={items}
-                  onAddValue={handleAddValue}
+            <div className="overflow-y-auto flex-1 p-1 space-y-0.5">
+              {attributes.map((attr) => (
+                <DraggableAttribute
+                  key={attr.id}
+                  attribute={attr}
                   onRemove={(id) => deleteAttribute.mutate(id)}
                 />
               ))}
@@ -460,6 +422,7 @@ export function RightPanel() {
             <div className="overflow-y-auto flex-1 p-1 space-y-1">
               {creatingOffer && (
                 <OfferForm
+                  formId="create"
                   onSave={(data) => createOffer.mutate(data, { onSuccess: () => setCreatingOffer(false) })}
                   onCancel={() => setCreatingOffer(false)}
                   isSaving={createOffer.isPending}

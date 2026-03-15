@@ -47,7 +47,11 @@ export interface OfferResponse {
   id: number
   name: string
   description: string
+  wellness_kit_name: string
+  wellness_kit_image_url: string
+  wellness_kit_description: string
   price: number
+  default: boolean
   requires_all: number[]
   requires_optional: number[]
   excludes: number[]
@@ -64,7 +68,11 @@ export interface OffersListResponse {
 export interface OfferCreateRequest {
   name: string
   description?: string
+  wellness_kit_name?: string
+  wellness_kit_image_url?: string
+  wellness_kit_description?: string
   price: number
+  default?: boolean
   requires_all?: number[]
   requires_optional?: number[]
   excludes?: number[]
@@ -74,7 +82,11 @@ export interface OfferCreateRequest {
 export interface OfferUpdateRequest {
   name?: string | null
   description?: string | null
+  wellness_kit_name?: string | null
+  wellness_kit_image_url?: string | null
+  wellness_kit_description?: string | null
   price?: number | null
+  default?: boolean | null
   requires_all?: number[] | null
   requires_optional?: number[] | null
   excludes?: number[] | null
