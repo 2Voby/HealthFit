@@ -175,34 +175,22 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         ("30–60 хвилин", ["duration:30-60-min"]),
     ]
 
-    async def create_age_question() -> tuple[Question, dict[str, QuestionAnswer]]:
-        return await create_question_with_answers(
-            text="Скільки тобі років?",
-            question_type="manual_input",
-            requires=True,
-            answers=age_answers,
-            manual_input_type="number",
-            manual_input_min=14,
-            manual_input_max=75,
-        )
-
-    async def create_training_experience_question() -> tuple[Question, dict[str, QuestionAnswer]]:
-        return await create_question_with_answers(
-            text="Який у тебе досвід фізичних навантажень?",
-            question_type="singe_choise",
-            requires=True,
-            answers=training_experience_answers,
-        )
-
-    async def create_physical_limitations_question() -> tuple[Question, dict[str, QuestionAnswer]]:
-        return await create_question_with_answers(
-            text="Чи є у тебе фізичні обмеження?",
-            question_type="multiple_choise",
-            requires=True,
-            answers=physical_limitations_answers,
-        )
-
-    q1, q1_answers = await create_question_with_answers(
+    q1, _ = await create_question_with_answers(
+        text="Скільки тобі років?",
+        question_type="manual_input",
+        requires=True,
+        answers=age_answers,
+        manual_input_type="number",
+        manual_input_min=14,
+        manual_input_max=75,
+    )
+    q2, _ = await create_question_with_answers(
+        text="Який у тебе досвід фізичних навантажень?",
+        question_type="singe_choise",
+        requires=True,
+        answers=training_experience_answers,
+    )
+    q3, q3_answers = await create_question_with_answers(
         text="Яка твоя головна мета прямо зараз?",
         question_type="singe_choise",
         requires=True,
@@ -215,8 +203,6 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         ],
     )
 
-    q2a, _ = await create_age_question()
-    q3a, _ = await create_training_experience_question()
     q4a, _ = await create_question_with_answers(
         text="Де плануєш тренуватися?",
         question_type="singe_choise",
@@ -227,7 +213,12 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("На вулиці / у дворі", ["location:outdoor"]),
         ],
     )
-    q5a, q5a_answers = await create_physical_limitations_question()
+    q5a, q5a_answers = await create_question_with_answers(
+        text="Чи є у тебе фізичні обмеження?",
+        question_type="multiple_choise",
+        requires=True,
+        answers=physical_limitations_answers,
+    )
     q6a, _ = await create_question_with_answers(
         text="Скільки разів на тиждень ти реально готовий(а) тренуватися?",
         question_type="singe_choise",
@@ -245,8 +236,6 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         answers=duration_with_micro_answers,
     )
 
-    q2b, _ = await create_age_question()
-    q3b, _ = await create_training_experience_question()
     q4b, _ = await create_question_with_answers(
         text="Де плануєш тренуватися?",
         question_type="singe_choise",
@@ -266,7 +255,12 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Рівновага — і те, і інше", ["priority:balanced"]),
         ],
     )
-    q6b, q6b_answers = await create_physical_limitations_question()
+    q6b, q6b_answers = await create_question_with_answers(
+        text="Чи є у тебе фізичні обмеження?",
+        question_type="multiple_choise",
+        requires=True,
+        answers=physical_limitations_answers,
+    )
     q7b, q7b_answers = await create_question_with_answers(
         text="Скільки хвилин готовий(а) приділяти одному тренуванню?",
         question_type="singe_choise",
@@ -305,8 +299,6 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         ],
     )
 
-    q2e, _ = await create_age_question()
-    q3e, _ = await create_training_experience_question()
     q4e, _ = await create_question_with_answers(
         text="Який у тебе досвід бігу?",
         question_type="singe_choise",
@@ -344,8 +336,6 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         answers=physical_limitations_answers,
     )
 
-    q2f, _ = await create_age_question()
-    q3f, _ = await create_training_experience_question()
     q4f, _ = await create_question_with_answers(
         text="Що хочеш покращити?",
         question_type="multiple_choise",
@@ -378,8 +368,6 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         ],
     )
 
-    q2g, _ = await create_age_question()
-    q3g, _ = await create_training_experience_question()
     q4g, _ = await create_question_with_answers(
         text="Що з цього тебе описує зараз?",
         question_type="multiple_choise",
@@ -475,8 +463,8 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         price=49.99,
         priority=90,
         default=False,
-        requires_all=["goal:weight-loss", "location:home", "limitation:none", "duration:20-30-min"],
-        requires_optional=["training-experience:zero", "frequency:3-4-per-week"],
+        requires_all=["goal:weight-loss", "limitation:none", "duration:20-30-min"],
+        requires_optional=["location:home", "location:outdoor", "training-experience:zero", "frequency:3-4-per-week"],
         excludes=[],
     )
     await create_offer(
@@ -489,7 +477,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         priority=88,
         default=False,
         requires_all=["location:gym", "limitation:none"],
-        requires_optional=["goal:muscle-gain", "goal:weight-loss", "priority:max-muscle", "priority:balanced"],
+        requires_optional=["goal:muscle-gain", "goal:weight-loss", "priority:max-muscle", "priority:balanced", "training-experience:regular"],
         excludes=[],
     )
     await create_offer(
@@ -502,7 +490,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         priority=94,
         default=False,
         requires_all=["offer-track:low-impact"],
-        requires_optional=["pain-area:multiple", "limitation:knees", "limitation:back", "rehab:doctor-guidance"],
+        requires_optional=["pain-area:multiple", "limitation:knees", "limitation:back", "rehab:doctor-guidance", "age:45-plus"],
         excludes=[],
     )
     await create_offer(
@@ -564,14 +552,12 @@ async def bootstrap_mock_data(settings: Settings) -> None:
     )
     ordered_questions = [
         q1,
-        q2a,
-        q3a,
+        q2,
+        q3,
         q4a,
         q5a,
         q6a,
         q7a,
-        q2b,
-        q3b,
         q4b,
         q5b,
         q6b,
@@ -579,19 +565,13 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         q4c,
         q5c,
         q6c,
-        q2e,
-        q3e,
         q4e,
         q5e,
         q6e,
         q7e,
-        q2f,
-        q3f,
         q4f,
         q5f,
         q6f,
-        q2g,
-        q3g,
         q4g,
         q5g,
         q6g,
@@ -605,11 +585,11 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             position=position,
         )
 
-    goal_weight_loss_answer = q1_answers["Схуднути та спалити жир"]
-    goal_muscle_gain_answer = q1_answers["Набрати м'язи та рельєф"]
-    goal_run_answer = q1_answers["Почати бігати / підготуватися до 5K"]
-    goal_mobility_answer = q1_answers["Гнучкість, постава, мобільність"]
-    goal_stress_answer = q1_answers["Знизити стрес, відновитися"]
+    goal_weight_loss_answer = q3_answers["Схуднути та спалити жир"]
+    goal_muscle_gain_answer = q3_answers["Набрати м'язи та рельєф"]
+    goal_run_answer = q3_answers["Почати бігати / підготуватися до 5K"]
+    goal_mobility_answer = q3_answers["Гнучкість, постава, мобільність"]
+    goal_stress_answer = q3_answers["Знизити стрес, відновитися"]
 
     restrictive_a_answers = [
         q5a_answers["Болять коліна або суглоби"],
@@ -639,14 +619,15 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         for answer in answers or []:
             await FlowTransitionAnswer.create(transition=transition, answer=answer)
 
-    await create_transition(q1, q2a, "answer_any", 10, [goal_weight_loss_answer])
-    await create_transition(q1, q2b, "answer_any", 20, [goal_muscle_gain_answer])
-    await create_transition(q1, q2e, "answer_any", 30, [goal_run_answer])
-    await create_transition(q1, q2f, "answer_any", 40, [goal_mobility_answer])
-    await create_transition(q1, q2g, "answer_any", 50, [goal_stress_answer])
+    await create_transition(q1, q2, "always", 10)
+    await create_transition(q2, q3, "always", 10)
 
-    await create_transition(q2a, q3a, "always", 10)
-    await create_transition(q3a, q4a, "always", 10)
+    await create_transition(q3, q4a, "answer_any", 10, [goal_weight_loss_answer])
+    await create_transition(q3, q4b, "answer_any", 20, [goal_muscle_gain_answer])
+    await create_transition(q3, q4e, "answer_any", 30, [goal_run_answer])
+    await create_transition(q3, q4f, "answer_any", 40, [goal_mobility_answer])
+    await create_transition(q3, q4g, "answer_any", 50, [goal_stress_answer])
+
     await create_transition(q4a, q5a, "always", 10)
     await create_transition(q5a, q4c, "answer_any", 10, restrictive_a_answers)
     await create_transition(q5a, q6a, "answer_any", 20, [q5a_answers["Немає обмежень — все ок"]])
@@ -660,8 +641,6 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         [q7a_answers["20–30 хвилин"], q7a_answers["30–60 хвилин"]],
     )
 
-    await create_transition(q2b, q3b, "always", 10)
-    await create_transition(q3b, q4b, "always", 10)
     await create_transition(q4b, q5b, "always", 10)
     await create_transition(q5b, q6b, "always", 10)
     await create_transition(q6b, q4c, "answer_any", 10, restrictive_b_answers)
@@ -679,21 +658,15 @@ async def bootstrap_mock_data(settings: Settings) -> None:
     await create_transition(q5c, q6c, "always", 10)
     await create_transition(q6c, None, "always", 10)
 
-    await create_transition(q2e, q3e, "always", 10)
-    await create_transition(q3e, q4e, "always", 10)
     await create_transition(q4e, q5e, "always", 10)
     await create_transition(q5e, q6e, "always", 10)
     await create_transition(q6e, q7e, "always", 10)
     await create_transition(q7e, None, "always", 10)
 
-    await create_transition(q2f, q3f, "always", 10)
-    await create_transition(q3f, q4f, "always", 10)
     await create_transition(q4f, q5f, "always", 10)
     await create_transition(q5f, q6f, "always", 10)
     await create_transition(q6f, None, "always", 10)
 
-    await create_transition(q2g, q3g, "always", 10)
-    await create_transition(q3g, q4g, "always", 10)
     await create_transition(q4g, q5g, "always", 10)
     await create_transition(q5g, q6g, "always", 10)
     await create_transition(q6g, None, "always", 10)
