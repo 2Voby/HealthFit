@@ -1,10 +1,20 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import { LayoutDashboard, Save, MoreHorizontal, Download, Copy, Trash2, Plus, Pencil, LogOut } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import {
   Dialog,
   DialogContent,
@@ -257,12 +267,23 @@ export function TopBar() {
     toast.success('Exported JSON')
   }
 
+  const [confirmSwitch, setConfirmSwitch] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
   const handleFlowChange = (flowId: string) => {
     if (isDirty) {
-      if (!window.confirm('You have unsaved changes. Switch flow anyway?')) return
+      setConfirmSwitch(flowId)
+      return
     }
     const flow = flows.find((f) => f.id === Number(flowId))
     if (flow) selectFlow(flow)
+  }
+
+  const handleConfirmSwitch = () => {
+    if (!confirmSwitch) return
+    const flow = flows.find((f) => f.id === Number(confirmSwitch))
+    if (flow) selectFlow(flow)
+    setConfirmSwitch(null)
   }
 
   const handleDeleteFlow = () => {
@@ -271,7 +292,12 @@ export function TopBar() {
       toast.error('Cannot delete the last flow')
       return
     }
-    if (!window.confirm('Delete this flow? This cannot be undone.')) return
+    setConfirmDelete(true)
+  }
+
+  const handleConfirmDelete = () => {
+    if (!activeFlowId) return
+    setConfirmDelete(false)
     deleteFlow.mutate(activeFlowId, {
       onSuccess: () => toast.success('Flow deleted'),
       onError: (err) => toast.error(err.message || 'Delete failed'),
@@ -450,6 +476,38 @@ export function TopBar() {
           </DropdownMenu>
         </div>
       </div>
+
+      <AlertDialog open={confirmSwitch !== null} onOpenChange={(open) => !open && setConfirmSwitch(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. Switch flow anyway? Your changes will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSwitch}>Switch</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete flow</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The flow and all its data will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </TooltipProvider>
   )
 }
