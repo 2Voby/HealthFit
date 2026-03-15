@@ -129,8 +129,8 @@ function OfferForm({
 }) {
   const [name, setName] = useState(initial?.name ?? '')
   const [description, setDescription] = useState(initial?.description ?? '')
-  const [price, setPrice] = useState(String(initial?.price ?? 0))
-  const [priority, setPriority] = useState(String(initial?.priority ?? 0))
+  const [price, setPrice] = useState(initial?.price != null ? String(initial.price) : '')
+  const [priority, setPriority] = useState(initial?.priority != null ? String(initial.priority) : '')
   const [isDefault, setIsDefault] = useState(initial?.default ?? false)
   const [wkName, setWkName] = useState(initial?.wellness_kit_name ?? '')
   const [wkImageUrl, setWkImageUrl] = useState(initial?.wellness_kit_image_url ?? '')
