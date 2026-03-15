@@ -72,6 +72,11 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         "injuries:no",
         "injury:knees",
         "injury:back",
+        "injury:neck",
+        "injury:shoulders",
+        "injury:wrists",
+        "injury:hips",
+        "injury:ankles",
         "injury:other",
         "level:beginner",
         "level:intermediate",
@@ -252,6 +257,11 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         answers=[
             ("Коліна", ["injury:knees", "preference:low-impact"]),
             ("Спина", ["injury:back", "preference:low-impact"]),
+            ("Шия", ["injury:neck", "preference:low-impact"]),
+            ("Плечі", ["injury:shoulders", "preference:low-impact"]),
+            ("Зап'ястя", ["injury:wrists", "preference:low-impact"]),
+            ("Таз/стегна", ["injury:hips", "preference:low-impact"]),
+            ("Гомілкостоп", ["injury:ankles", "preference:low-impact"]),
             ("Інше", ["injury:other", "preference:low-impact"]),
         ],
     )
