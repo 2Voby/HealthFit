@@ -42,6 +42,7 @@ export function EditableMetricDisplay({
 						value={draft}
 						onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
 						onBlur={commit}
+						disabled={true}
 						onKeyDown={(e) => {
 							if (e.key === "Enter") {
 								e.preventDefault();

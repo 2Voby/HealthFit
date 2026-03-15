@@ -16,10 +16,7 @@ interface NumberWheelProps {
 }
 
 export function NumberWheel({ value, min, max, unit, onChange }: NumberWheelProps) {
-	const numbers = useMemo(
-		() => Array.from({ length: max - min + 1 }, (_, i) => min + i),
-		[min, max],
-	);
+	const numbers = useMemo(() => Array.from({ length: max - min + 1 }, (_, i) => min + i), [min, max]);
 	const scrollerRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -55,8 +52,7 @@ export function NumberWheel({ value, min, max, unit, onChange }: NumberWheelProp
 					ref={scrollerRef}
 					onScroll={handleScroll}
 					className="snap-y snap-mandatory overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-					style={{ height: `${WHEEL_HEIGHT}px` }}
-				>
+					style={{ height: `${WHEEL_HEIGHT}px` }}>
 					<div style={{ height: `${WHEEL_PADDING}px` }} />
 					{numbers.map((item) => {
 						const selected = item === value;
@@ -66,22 +62,14 @@ export function NumberWheel({ value, min, max, unit, onChange }: NumberWheelProp
 								type="button"
 								onClick={() => onChange(item)}
 								className="flex w-full snap-center items-center justify-center gap-2 rounded-xl transition-colors"
-								style={{ height: `${WHEEL_ITEM_HEIGHT}px` }}
-							>
+								style={{ height: `${WHEEL_ITEM_HEIGHT}px` }}>
 								<span
 									className={`text-[34px] leading-none ${
 										selected ? "font-semibold text-[#123825]" : "font-medium text-[#8da999]"
-									}`}
-								>
+									}`}>
 									{item}
 								</span>
-								<span
-									className={`text-[18px] ${
-										selected ? "font-semibold text-[#2b6e4d]" : "text-transparent"
-									}`}
-								>
-									{unit}
-								</span>
+								<span className={`text-[18px] ${selected ? "font-semibold text-[#2b6e4d]" : "text-transparent"}`}>{unit}</span>
 							</button>
 						);
 					})}
@@ -92,17 +80,15 @@ export function NumberWheel({ value, min, max, unit, onChange }: NumberWheelProp
 					<button
 						type="button"
 						onClick={() => onChange(clamp(value - 1, min, max))}
-						disabled={value >= max}
-						className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#cfe3d7] bg-[#f3fbf6] text-[#256f4b] disabled:opacity-40"
-					>
+						disabled={value <= min}
+						className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#cfe3d7] bg-[#f3fbf6] text-[#256f4b] disabled:opacity-40">
 						<ChevronUp className="h-4 w-4" />
 					</button>
 					<button
 						type="button"
 						onClick={() => onChange(clamp(value + 1, min, max))}
-						disabled={value <= min}
-						className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#cfe3d7] bg-[#f3fbf6] text-[#256f4b] disabled:opacity-40"
-					>
+						disabled={value >= max}
+						className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#cfe3d7] bg-[#f3fbf6] text-[#256f4b] disabled:opacity-40">
 						<ChevronDown className="h-4 w-4" />
 					</button>
 				</div>

@@ -10,6 +10,7 @@ import { Loader2, Sparkles } from "lucide-react";
 import { SingleChoiceBlock } from "./components/SingleChoiceBlock";
 import { MultiChoiceBlock } from "./components/MultiChoiceBlock";
 import { NumberChoiceBlock } from "./components/NumberChoiceBlock";
+import { resolveAnswerByValue } from "@/utils/index";
 
 export default function QuizPage() {
 	const navigate = useNavigate();
@@ -55,7 +56,12 @@ export default function QuizPage() {
 
 	const currentAnswer = answers[currentQ.id];
 	const isMulti = currentQ.type === "multiple_choise";
-	const isAnswered = isMulti ? Array.isArray(currentAnswer) && currentAnswer.length > 0 : currentAnswer !== undefined;
+	const isAnswered =
+		currentQ.type === "manual_input"
+			? answers[currentQ.id] !== undefined
+			: isMulti
+				? Array.isArray(currentAnswer) && currentAnswer.length > 0
+				: currentAnswer !== undefined;
 	const canContinue = currentQ.type === "text" || !currentQ.requires || isAnswered;
 	const hasError = invalidQuestionId === currentQ.id;
 
@@ -111,7 +117,16 @@ export default function QuizPage() {
 		}
 		setInvalidQuestionId(null);
 
-		const answerIds = getAnswerIds();
+		let answerIds: number[];
+
+		if (currentQ.type === "manual_input") {
+			const numValue = Number(answers[currentQ.id]);
+			const matched = resolveAnswerByValue(numValue, currentQ.answers);
+			answerIds = matched ? [matched.id] : [];
+		} else {
+			answerIds = getAnswerIds();
+		}
+
 		const newAttributes = getAttributesForAnswerIds(answerIds);
 		const updatedAttributes = [...collectedAttributes, ...newAttributes];
 		setCollectedAttributes(updatedAttributes);
@@ -175,12 +190,17 @@ export default function QuizPage() {
 									}}
 								/>
 							)}
-							{currentQ.type === "number_input" && (
+							{currentQ.type === "manual_input" && currentQ.manual_input && (
 								<NumberChoiceBlock
 									question={currentQ}
-									value={Number(answers[currentQ.id] ?? 0)}
+									value={typeof answers[currentQ.id] === "number" ? Number(answers[currentQ.id]) : currentQ.manual_input.min}
 									hasError={hasError}
-									onChange={(val) => setAnswers((a) => ({ ...a, [currentQ.id]: val }))}
+									min={currentQ.manual_input.min}
+									max={currentQ.manual_input.max}
+									onChange={(val) => {
+										setAnswers((a) => ({ ...a, [currentQ.id]: val }));
+										setInvalidQuestionId(null);
+									}}
 								/>
 							)}
 						</div>
