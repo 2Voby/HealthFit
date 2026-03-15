@@ -92,8 +92,24 @@ async def replace_question_answers(
     question: Question,
     answers_payload: list[QuestionAnswerCreateRequest],
 ) -> None:
-    await QuestionAnswer.filter(question=question).delete()
-    for answer_payload in answers_payload:
+    existing_answers = await QuestionAnswer.filter(question=question).order_by("id")
+    shared_answers_count = min(len(existing_answers), len(answers_payload))
+
+    for index in range(shared_answers_count):
+        existing_answer = existing_answers[index]
+        answer_payload = answers_payload[index]
+        existing_answer.text = answer_payload.text
+        await existing_answer.save()
+
+        attributes = await resolve_attributes(answer_payload.attributes)
+        await existing_answer.attributes.clear()
+        if attributes:
+            await existing_answer.attributes.add(*attributes)
+
+    for answer in existing_answers[shared_answers_count:]:
+        await answer.delete()
+
+    for answer_payload in answers_payload[shared_answers_count:]:
         answer = await QuestionAnswer.create(
             question=question,
             text=answer_payload.text,

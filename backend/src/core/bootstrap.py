@@ -41,71 +41,82 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         return
 
     attribute_names = [
+        "goal:weight-loss",
+        "goal:muscle-gain",
+        "goal:run-5k",
+        "goal:mobility",
+        "goal:stress-reset",
+        "age:14-17",
         "age:18-24",
         "age:25-34",
         "age:35-44",
         "age:45-plus",
-        "gender:female",
-        "gender:male",
-        "gender:unspecified",
+        "training-experience:zero",
+        "training-experience:returning",
+        "training-experience:regular",
         "location:home",
         "location:gym",
         "location:outdoor",
-        "home-equipment:none",
-        "home-equipment:basic",
-        "home-equipment:full",
-        "gym-experience:beginner",
-        "gym-experience:regular",
-        "gym-experience:advanced",
-        "outdoor-format:running",
-        "outdoor-format:walking",
-        "outdoor-format:mixed",
-        "workout-time:10-15-min",
-        "workout-time:20-30-min",
-        "workout-time:30-45-min",
-        "goal:weight-loss",
-        "goal:strength",
-        "goal:flexibility",
-        "goal:stress-relief",
-        "goal:endurance",
-        "injuries:yes",
-        "injuries:no",
-        "injury:knees",
-        "injury:back",
-        "injury:neck",
-        "injury:shoulders",
-        "injury:wrists",
-        "injury:hips",
-        "injury:ankles",
-        "injury:other",
-        "level:beginner",
-        "level:intermediate",
-        "level:advanced",
-        "barrier:lack-of-time",
-        "barrier:stress",
-        "barrier:lack-of-discipline",
-        "barrier:fatigue",
-        "preference:strength",
-        "preference:running",
-        "preference:yoga",
-        "preference:mobility",
-        "preference:low-impact",
-        "preference:short-sessions",
-        "intensity:low",
-        "intensity:medium",
-        "intensity:high",
-        "schedule:2-3-per-week",
-        "schedule:4-5-per-week",
-        "schedule:daily",
-        "stress:low",
-        "stress:medium",
-        "stress:high",
-        "sleep:poor",
-        "sleep:normal",
-        "sleep:good",
-        "energy:low",
-        "energy:medium",
-        "energy:high",
+        "location:treadmill",
+        "location:mixed",
+        "location:office",
+        "location:anywhere",
+        "limitation:none",
+        "limitation:knees",
+        "limitation:back",
+        "limitation:pregnancy-postpartum",
+        "limitation:joint-weakness",
+        "limitation:multiple",
+        "frequency:2-per-week",
+        "frequency:3-4-per-week",
+        "frequency:5-6-per-week",
+        "duration:5-10-min",
+        "duration:15-min",
+        "duration:15-20-min",
+        "duration:20-30-min",
+        "duration:30-plus-min",
+        "duration:30-60-min",
+        "priority:fat-loss-strength",
+        "priority:max-muscle",
+        "priority:balanced",
+        "pain-area:knees",
+        "pain-area:back",
+        "pain-area:joints",
+        "pain-area:multiple",
+        "rehab:doctor-guidance",
+        "rehab:cautious",
+        "rehab:needs-assessment",
+        "running-experience:none",
+        "running-experience:returning",
+        "running-experience:occasional",
+        "running-goal:finish-5k",
+        "running-goal:sub-30",
+        "running-goal:event",
+        "mobility-focus:posture",
+        "mobility-focus:hips-legs",
+        "mobility-focus:general",
+        "mobility-focus:sleep-recovery",
+        "yoga-experience:beginner",
+        "yoga-experience:occasional",
+        "yoga-experience:regular",
+        "practice-time:morning",
+        "practice-time:evening",
+        "practice-time:flexible",
+        "stress-state:anxious",
+        "stress-state:poor-sleep",
+        "stress-state:burnout",
+        "stress-state:mental-overload",
+        "activity:none",
+        "activity:light",
+        "activity:regular",
+        "micro-goal:fat-burn",
+        "micro-goal:tone",
+        "micro-goal:stress-relief",
+        "offer-track:low-impact",
+        "offer-track:running",
+        "offer-track:yoga-mobility",
+        "offer-track:stress-reset",
+        "offer-track:micro",
     ]
     attributes_by_name: dict[str, Attribute] = {}
     for attribute_name in attribute_names:
@@ -140,213 +151,285 @@ async def bootstrap_mock_data(settings: Settings) -> None:
                 await answer.attributes.add(*(attributes_by_name[name] for name in answer_attribute_names))
         return question, created_answers
 
-    q1, _ = await create_question_with_answers(
-        text="Ласкаво просимо до персонального wellness-підбору. Відповіді займуть до 2 хвилин.",
-        question_type="text",
-        requires=False,
-        answers=[],
-    )
-    q2, _ = await create_question_with_answers(
-        text="Ваш вік?",
-        question_type="manual_input",
-        requires=True,
-        answers=[
-            ("18-24", ["age:18-24"]),
-            ("25-34", ["age:25-34"]),
-            ("35-44", ["age:35-44"]),
-            ("45+", ["age:45-plus"]),
-        ],
-        manual_input_type="number",
-        manual_input_min=18,
-        manual_input_max=100,
-    )
-    q3, _ = await create_question_with_answers(
-        text="Ваш зріст (см)?",
-        question_type="manual_input",
-        requires=True,
-        answers=[],
-        manual_input_type="number",
-        manual_input_min=120,
-        manual_input_max=220,
-    )
-    q4, _ = await create_question_with_answers(
-        text="Ваша стать?",
+    age_answers = [
+        ("14-17", ["age:14-17"]),
+        ("18-24", ["age:18-24"]),
+        ("25-34", ["age:25-34"]),
+        ("35-44", ["age:35-44"]),
+        ("45+", ["age:45-plus"]),
+    ]
+    training_experience_answers = [
+        ("Починаю з нуля — раніше майже не тренувався(лась)", ["training-experience:zero"]),
+        ("Тренувався(лась), але давно кинув(ла)", ["training-experience:returning"]),
+        ("Займаюся регулярно (3+ рази на тиждень)", ["training-experience:regular"]),
+    ]
+    physical_limitations_answers = [
+        ("Болять коліна або суглоби", ["limitation:knees"]),
+        ("Проблеми зі спиною або поперек", ["limitation:back"]),
+        ("Вагітність або післяпологовий період", ["limitation:pregnancy-postpartum"]),
+        ("Немає обмежень — все ок", ["limitation:none"]),
+    ]
+    duration_with_micro_answers = [
+        ("До 15 хв", ["duration:15-min", "offer-track:micro"]),
+        ("20–30 хвилин", ["duration:20-30-min"]),
+        ("30–60 хвилин", ["duration:30-60-min"]),
+    ]
+
+    async def create_age_question() -> tuple[Question, dict[str, QuestionAnswer]]:
+        return await create_question_with_answers(
+            text="Скільки тобі років?",
+            question_type="manual_input",
+            requires=True,
+            answers=age_answers,
+            manual_input_type="number",
+            manual_input_min=14,
+            manual_input_max=75,
+        )
+
+    async def create_training_experience_question() -> tuple[Question, dict[str, QuestionAnswer]]:
+        return await create_question_with_answers(
+            text="Який у тебе досвід фізичних навантажень?",
+            question_type="singe_choise",
+            requires=True,
+            answers=training_experience_answers,
+        )
+
+    async def create_physical_limitations_question() -> tuple[Question, dict[str, QuestionAnswer]]:
+        return await create_question_with_answers(
+            text="Чи є у тебе фізичні обмеження?",
+            question_type="multiple_choise",
+            requires=True,
+            answers=physical_limitations_answers,
+        )
+
+    q1, q1_answers = await create_question_with_answers(
+        text="Яка твоя головна мета прямо зараз?",
         question_type="singe_choise",
-        requires=False,
+        requires=True,
         answers=[
-            ("Жінка", ["gender:female"]),
-            ("Чоловік", ["gender:male"]),
-            ("Не вказувати", ["gender:unspecified"]),
+            ("Схуднути та спалити жир", ["goal:weight-loss"]),
+            ("Набрати м'язи та рельєф", ["goal:muscle-gain"]),
+            ("Почати бігати / підготуватися до 5K", ["goal:run-5k"]),
+            ("Гнучкість, постава, мобільність", ["goal:mobility"]),
+            ("Знизити стрес, відновитися", ["goal:stress-reset"]),
         ],
     )
-    q5, q5_answers = await create_question_with_answers(
-        text="Де вам зручніше займатися?",
+
+    q2a, _ = await create_age_question()
+    q3a, _ = await create_training_experience_question()
+    q4a, _ = await create_question_with_answers(
+        text="Де плануєш тренуватися?",
+        question_type="singe_choise",
+        requires=True,
+        answers=[
+            ("Вдома — без залу або мінімум обладнання", ["location:home"]),
+            ("У залі — є доступ до тренажерів", ["location:gym"]),
+            ("На вулиці / у дворі", ["location:outdoor"]),
+        ],
+    )
+    q5a, q5a_answers = await create_physical_limitations_question()
+    q6a, _ = await create_question_with_answers(
+        text="Скільки разів на тиждень ти реально готовий(а) тренуватися?",
+        question_type="singe_choise",
+        requires=True,
+        answers=[
+            ("2 рази", ["frequency:2-per-week"]),
+            ("3–4 рази", ["frequency:3-4-per-week"]),
+            ("5–6 разів (кожен день)", ["frequency:5-6-per-week"]),
+        ],
+    )
+    q7a, q7a_answers = await create_question_with_answers(
+        text="Скільки хвилин готовий(а) приділяти одному тренуванню?",
+        question_type="singe_choise",
+        requires=True,
+        answers=duration_with_micro_answers,
+    )
+
+    q2b, _ = await create_age_question()
+    q3b, _ = await create_training_experience_question()
+    q4b, _ = await create_question_with_answers(
+        text="Де плануєш тренуватися?",
         question_type="singe_choise",
         requires=True,
         answers=[
             ("Вдома", ["location:home"]),
             ("У залі", ["location:gym"]),
-            ("На вулиці", ["location:outdoor"]),
         ],
     )
-    q6, _ = await create_question_with_answers(
-        text="Яке обладнання у вас є вдома?",
-        question_type="singe_choise",
-        requires=False,
-        answers=[
-            ("Немає", ["home-equipment:none"]),
-            ("Базове (гантелі/резинки)", ["home-equipment:basic"]),
-            ("Повний сет", ["home-equipment:full"]),
-        ],
-    )
-    q7, _ = await create_question_with_answers(
-        text="Який у вас досвід тренувань у залі?",
-        question_type="singe_choise",
-        requires=False,
-        answers=[
-            ("Новачок", ["gym-experience:beginner"]),
-            ("Тренуюсь регулярно", ["gym-experience:regular"]),
-            ("Просунутий рівень", ["gym-experience:advanced"]),
-        ],
-    )
-    q8, _ = await create_question_with_answers(
-        text="Який outdoor формат вам ближчий?",
-        question_type="singe_choise",
-        requires=False,
-        answers=[
-            ("Біг", ["outdoor-format:running", "preference:running"]),
-            ("Ходьба", ["outdoor-format:walking"]),
-            ("Мікс активностей", ["outdoor-format:mixed"]),
-        ],
-    )
-    q9, _ = await create_question_with_answers(
-        text="Скільки часу на день ви готові виділяти?",
+    q5b, _ = await create_question_with_answers(
+        text="Що для тебе важливіше зараз?",
         question_type="singe_choise",
         requires=True,
         answers=[
-            ("10–15 хв", ["workout-time:10-15-min", "preference:short-sessions"]),
-            ("20–30 хв", ["workout-time:20-30-min"]),
-            ("30–45 хв", ["workout-time:30-45-min"]),
+            ("Зменшити жир + стати сильнішим(ою)", ["priority:fat-loss-strength"]),
+            ("Максимально наростити м'язи", ["priority:max-muscle"]),
+            ("Рівновага — і те, і інше", ["priority:balanced"]),
         ],
     )
-    q10, _ = await create_question_with_answers(
-        text="Яка ваша головна ціль?",
+    q6b, q6b_answers = await create_physical_limitations_question()
+    q7b, q7b_answers = await create_question_with_answers(
+        text="Скільки хвилин готовий(а) приділяти одному тренуванню?",
+        question_type="singe_choise",
+        requires=True,
+        answers=duration_with_micro_answers,
+    )
+
+    q4c, _ = await create_question_with_answers(
+        text="Що турбує найбільше?",
         question_type="singe_choise",
         requires=True,
         answers=[
-            ("Схуднення", ["goal:weight-loss"]),
-            ("Сила", ["goal:strength", "preference:strength"]),
-            ("Гнучкість", ["goal:flexibility", "preference:yoga", "preference:mobility"]),
-            ("Зниження стресу", ["goal:stress-relief"]),
-            ("Витривалість", ["goal:endurance"]),
+            ("Коліна — важко присідати, стрибати", ["pain-area:knees", "offer-track:low-impact"]),
+            ("Спина/поперек — важко нахилятися", ["pain-area:back", "offer-track:low-impact"]),
+            ("Загальна слабкість суглобів", ["pain-area:joints", "limitation:joint-weakness", "offer-track:low-impact"]),
+            ("Все перераховане", ["pain-area:multiple", "limitation:multiple", "offer-track:low-impact"]),
         ],
     )
-    q11, q11_answers = await create_question_with_answers(
-        text="Чи є у вас травми або обмеження?",
+    q5c, _ = await create_question_with_answers(
+        text="Ти зараз проходиш лікування або реабілітацію?",
         question_type="singe_choise",
         requires=True,
         answers=[
-            ("Так, є", ["injuries:yes", "preference:low-impact"]),
-            ("Ні, немає", ["injuries:no"]),
+            ("Так, є рекомендації лікаря", ["rehab:doctor-guidance", "offer-track:low-impact"]),
+            ("Ні, просто обережно ставлюся", ["rehab:cautious", "offer-track:low-impact"]),
+            ("Не знаю — хочу дізнатися що підходить", ["rehab:needs-assessment", "offer-track:low-impact"]),
         ],
     )
-    q12, _ = await create_question_with_answers(
-        text="Що саме турбує найбільше?",
+    q6c, _ = await create_question_with_answers(
+        text="Скільки хвилин готовий(а) приділяти одному тренуванню?",
+        question_type="singe_choise",
+        requires=True,
+        answers=[
+            ("20–30 хвилин", ["duration:20-30-min", "offer-track:low-impact"]),
+            ("30–60 хвилин", ["duration:30-60-min", "offer-track:low-impact"]),
+        ],
+    )
+
+    q2e, _ = await create_age_question()
+    q3e, _ = await create_training_experience_question()
+    q4e, _ = await create_question_with_answers(
+        text="Який у тебе досвід бігу?",
+        question_type="singe_choise",
+        requires=True,
+        answers=[
+            ("Ніколи не бігав(ла) регулярно", ["running-experience:none", "offer-track:running"]),
+            ("Бігав(ла) раніше, хочу повернутися", ["running-experience:returning", "offer-track:running"]),
+            ("Бігаю іноді, хочу підготуватися до забігу", ["running-experience:occasional", "offer-track:running"]),
+        ],
+    )
+    q5e, _ = await create_question_with_answers(
+        text="Де плануєш тренуватися?",
+        question_type="singe_choise",
+        requires=True,
+        answers=[
+            ("На вулиці — парк, стадіон", ["location:outdoor", "offer-track:running"]),
+            ("Бігова доріжка в залі", ["location:treadmill", "offer-track:running"]),
+            ("Комбінація", ["location:mixed", "offer-track:running"]),
+        ],
+    )
+    q6e, _ = await create_question_with_answers(
+        text="Яка твоя ціль?",
+        question_type="singe_choise",
+        requires=True,
+        answers=[
+            ("Просто пробігти 5K без зупинки", ["running-goal:finish-5k", "offer-track:running"]),
+            ("Пробігти за конкретний час (до 30 хв)", ["running-goal:sub-30", "offer-track:running"]),
+            ("Взяти участь у забігу / зареєструватися", ["running-goal:event", "offer-track:running"]),
+        ],
+    )
+    q7e, _ = await create_question_with_answers(
+        text="Чи є у тебе фізичні обмеження?",
         question_type="multiple_choise",
-        requires=False,
+        requires=True,
+        answers=physical_limitations_answers,
+    )
+
+    q2f, _ = await create_age_question()
+    q3f, _ = await create_training_experience_question()
+    q4f, _ = await create_question_with_answers(
+        text="Що хочеш покращити?",
+        question_type="multiple_choise",
+        requires=True,
         answers=[
-            ("Коліна", ["injury:knees", "preference:low-impact"]),
-            ("Спина", ["injury:back", "preference:low-impact"]),
-            ("Шия", ["injury:neck", "preference:low-impact"]),
-            ("Плечі", ["injury:shoulders", "preference:low-impact"]),
-            ("Зап'ястя", ["injury:wrists", "preference:low-impact"]),
-            ("Таз/стегна", ["injury:hips", "preference:low-impact"]),
-            ("Гомілкостоп", ["injury:ankles", "preference:low-impact"]),
-            ("Інше", ["injury:other", "preference:low-impact"]),
+            ("Спина та постава", ["mobility-focus:posture", "offer-track:yoga-mobility"]),
+            ("Гнучкість ніг та тазу", ["mobility-focus:hips-legs", "offer-track:yoga-mobility"]),
+            ("Загальна рухливість", ["mobility-focus:general", "offer-track:yoga-mobility"]),
+            ("Якість сну та відновлення", ["mobility-focus:sleep-recovery", "offer-track:yoga-mobility"]),
         ],
     )
-    q13, _ = await create_question_with_answers(
-        text="Ваш поточний рівень підготовки?",
+    q5f, _ = await create_question_with_answers(
+        text="Чи є досвід йоги або розтяжки?",
         question_type="singe_choise",
         requires=True,
         answers=[
-            ("Beginner", ["level:beginner"]),
-            ("Intermediate", ["level:intermediate"]),
-            ("Advanced", ["level:advanced"]),
+            ("Ні, повний новачок(чиня)", ["yoga-experience:beginner", "offer-track:yoga-mobility"]),
+            ("Займався(лась) іноді", ["yoga-experience:occasional", "offer-track:yoga-mobility"]),
+            ("Регулярна практика, хочу більше структури", ["yoga-experience:regular", "offer-track:yoga-mobility"]),
         ],
     )
-    q14, _ = await create_question_with_answers(
-        text="Що найчастіше заважає тренуватися регулярно?",
-        question_type="multiple_choise",
-        requires=False,
-        answers=[
-            ("Брак часу", ["barrier:lack-of-time"]),
-            ("Стрес", ["barrier:stress"]),
-            ("Брак дисципліни", ["barrier:lack-of-discipline"]),
-            ("Втома", ["barrier:fatigue"]),
-        ],
-    )
-    q15, _ = await create_question_with_answers(
-        text="Який формат тренувань вам ближчий?",
-        question_type="multiple_choise",
-        requires=False,
-        answers=[
-            ("Силові", ["preference:strength"]),
-            ("Біг", ["preference:running"]),
-            ("Йога", ["preference:yoga"]),
-            ("Мобільність/розтяжка", ["preference:mobility"]),
-            ("Low-impact", ["preference:low-impact"]),
-            ("Короткі сесії", ["preference:short-sessions"]),
-        ],
-    )
-    q16, _ = await create_question_with_answers(
-        text="Яку інтенсивність ви хочете?",
-        question_type="singe_choise",
-        requires=False,
-        answers=[
-            ("Низьку", ["intensity:low"]),
-            ("Середню", ["intensity:medium"]),
-            ("Високу", ["intensity:high"]),
-        ],
-    )
-    q17, _ = await create_question_with_answers(
-        text="Скільки тренувань на тиждень вам реально підходить?",
-        question_type="singe_choise",
-        requires=False,
-        answers=[
-            ("2–3", ["schedule:2-3-per-week"]),
-            ("4–5", ["schedule:4-5-per-week"]),
-            ("Щодня коротко", ["schedule:daily", "preference:short-sessions"]),
-        ],
-    )
-    q18, _ = await create_question_with_answers(
-        text="Ваш рівень стресу зараз?",
+    q6f, _ = await create_question_with_answers(
+        text="Коли плануєш займатися?",
         question_type="singe_choise",
         requires=True,
         answers=[
-            ("Низький", ["stress:low"]),
-            ("Середній", ["stress:medium"]),
-            ("Високий", ["stress:high"]),
+            ("Вранці — для заряду", ["practice-time:morning", "offer-track:yoga-mobility"]),
+            ("Ввечері — для розслаблення", ["practice-time:evening", "offer-track:yoga-mobility"]),
+            ("Різний час", ["practice-time:flexible", "offer-track:yoga-mobility"]),
         ],
     )
-    q19, _ = await create_question_with_answers(
-        text="Як оцінюєте якість сну?",
-        question_type="singe_choise",
-        requires=False,
+
+    q2g, _ = await create_age_question()
+    q3g, _ = await create_training_experience_question()
+    q4g, _ = await create_question_with_answers(
+        text="Що з цього тебе описує зараз?",
+        question_type="multiple_choise",
+        requires=True,
         answers=[
-            ("Погано", ["sleep:poor"]),
-            ("Нормально", ["sleep:normal"]),
-            ("Добре", ["sleep:good"]),
+            ("Постійно на нервах, важко заспокоїтися", ["stress-state:anxious", "offer-track:stress-reset"]),
+            ("Погано сплю, прокидаюся втомленим(ою)", ["stress-state:poor-sleep", "offer-track:stress-reset"]),
+            ("Відчуваю вигорання — немає сил ні на що", ["stress-state:burnout", "offer-track:stress-reset"]),
+            ("Тіло ок, але голова перевантажена", ["stress-state:mental-overload", "offer-track:stress-reset"]),
         ],
     )
-    q20, _ = await create_question_with_answers(
-        text="Ваш рівень енергії протягом дня?",
+    q5g, _ = await create_question_with_answers(
+        text="Чи займаєшся зараз якоюсь активністю?",
         question_type="singe_choise",
-        requires=False,
+        requires=True,
         answers=[
-            ("Низький", ["energy:low"]),
-            ("Середній", ["energy:medium"]),
-            ("Високий", ["energy:high"]),
+            ("Ні, зовсім не рухаюся", ["activity:none", "offer-track:stress-reset"]),
+            ("Іноді — прогулянки, йога", ["activity:light", "offer-track:stress-reset"]),
+            ("Так, тренуюся але відчуваю стрес", ["activity:regular", "offer-track:stress-reset"]),
+        ],
+    )
+    q6g, _ = await create_question_with_answers(
+        text="Скільки хвилин на день готовий(а) виділити на себе?",
+        question_type="singe_choise",
+        requires=True,
+        answers=[
+            ("5–10 хвилин — мінімум", ["duration:5-10-min", "offer-track:stress-reset"]),
+            ("15–20 хвилин", ["duration:15-20-min", "offer-track:stress-reset"]),
+            ("30+ хвилин — готовий(а) вкластися", ["duration:30-plus-min", "offer-track:stress-reset"]),
+        ],
+    )
+
+    q4m, _ = await create_question_with_answers(
+        text="Де плануєш займатися?",
+        question_type="singe_choise",
+        requires=True,
+        answers=[
+            ("Вдома", ["location:home", "offer-track:micro"]),
+            ("В офісі / у перерві", ["location:office", "offer-track:micro"]),
+            ("Де прийдеться", ["location:anywhere", "offer-track:micro"]),
+        ],
+    )
+    q5m, _ = await create_question_with_answers(
+        text="Чого хочеш досягти?",
+        question_type="singe_choise",
+        requires=True,
+        answers=[
+            ("Спалити жир та залишатися активним(ою)", ["micro-goal:fat-burn", "offer-track:micro"]),
+            ("Підтримувати тонус без великих зусиль", ["micro-goal:tone", "offer-track:micro"]),
+            ("Зняти напругу протягом дня", ["micro-goal:stress-relief", "offer-track:micro"]),
         ],
     )
 
@@ -382,94 +465,94 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         return offer
 
     await create_offer(
-        name="Weight Loss Starter (Home) — 4 тижні",
-        description="Digital: план схуднення вдома (20–30 хв)",
+        name="Weight Loss Starter (Home)",
+        description="Домашня програма для схуднення у форматі 20–30 хвилин.",
         wellness_kit_name="Home Fat-Burn Kit",
-        wellness_kit_image_url="https://placehold.co/600x400?text=Home+Fat-Burn+Kit",
-        wellness_kit_description="resistance bands, скакалка, шейкер/пляшка, електроліти + healthy snack",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Weight+Loss+Starter",
+        wellness_kit_description="Міні-бенди, скакалка, пляшка для води та короткий гайд по домашнім кардіо-сесіям.",
         price=49.99,
         priority=90,
         default=False,
-        requires_all=["goal:weight-loss", "location:home", "workout-time:20-30-min"],
-        requires_optional=["level:beginner", "preference:short-sessions"],
+        requires_all=["goal:weight-loss", "location:home", "limitation:none", "duration:20-30-min"],
+        requires_optional=["training-experience:zero", "frequency:3-4-per-week"],
         excludes=[],
     )
     await create_offer(
-        name="Lean Strength Builder (Gym) — силові + прогресія",
-        description="Digital: програма для залу",
+        name="Lean Strength Builder (Gym)",
+        description="Силова програма для залу з акцентом на рельєф і прогресію.",
         wellness_kit_name="Gym Support Kit",
-        wellness_kit_image_url="https://placehold.co/600x400?text=Gym+Support+Kit",
-        wellness_kit_description="wrist wraps/straps, mini loop band, компактний рушник, електроліти/протеїн-снек",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Lean+Strength+Builder",
+        wellness_kit_description="Лямки, міні-бенд, рушник для тренувань і чекліст прогресії по силових вправах.",
         price=59.99,
         priority=88,
         default=False,
-        requires_all=["goal:strength", "location:gym", "injuries:no"],
-        requires_optional=["level:intermediate", "level:advanced", "preference:strength"],
-        excludes=["injuries:yes"],
+        requires_all=["location:gym", "limitation:none"],
+        requires_optional=["goal:muscle-gain", "goal:weight-loss", "priority:max-muscle", "priority:balanced"],
+        excludes=[],
     )
     await create_offer(
-        name="Low-Impact Fat Burn — “суглоби friendly”",
-        description="Digital: low-impact план (коліна/спина friendly)",
+        name="Low-Impact Fat Burn",
+        description="М'який план тренувань для колін, спини та чутливих суглобів.",
         wellness_kit_name="Joint-Friendly Kit",
-        wellness_kit_image_url="https://placehold.co/600x400?text=Joint-Friendly+Kit",
-        wellness_kit_description="knee sleeve/бандаж, massage ball, mini loop bands, cooling patch/recovery gel",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Low-Impact+Fat+Burn",
+        wellness_kit_description="М'які стрічки, масажний м'яч, recovery-гель та добірка вправ без ударного навантаження.",
         price=54.99,
-        priority=86,
+        priority=94,
         default=False,
-        requires_all=["goal:strength", "location:gym", "injuries:yes"],
-        requires_optional=["preference:low-impact", "preference:mobility"],
+        requires_all=["offer-track:low-impact"],
+        requires_optional=["pain-area:multiple", "limitation:knees", "limitation:back", "rehab:doctor-guidance"],
         excludes=[],
     )
     await create_offer(
-        name="Run Your First 5K (Outdoor) — бігова програма",
-        description="Digital: підготовка до 5K (3 рази/тиж)",
+        name="Run Your First 5K",
+        description="Покрокова програма підготовки до перших стабільних 5 кілометрів.",
         wellness_kit_name="Runner Starter Kit",
-        wellness_kit_image_url="https://placehold.co/600x400?text=Runner+Starter+Kit",
-        wellness_kit_description="electrolytes, reflective armband/safety light, blister kit, running belt",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Run+Your+First+5K",
+        wellness_kit_description="Пояс для бігу, світловідбивач, електроліти та стартовий план бігових тижнів.",
         price=44.99,
-        priority=84,
+        priority=93,
         default=False,
-        requires_all=["goal:endurance", "location:outdoor", "injuries:no"],
-        requires_optional=["preference:running", "level:beginner"],
-        excludes=["injuries:yes"],
+        requires_all=["offer-track:running"],
+        requires_optional=["running-goal:event", "running-goal:sub-30", "running-experience:none"],
+        excludes=[],
     )
     await create_offer(
-        name="Yoga & Mobility (Home) — гнучкість + спина/постава",
-        description="Digital: йога/мобільність 10–25 хв",
+        name="Yoga & Mobility",
+        description="Програма для мобільності, постави й відновлення через м'яку практику.",
         wellness_kit_name="Mobility Kit",
-        wellness_kit_image_url="https://store.betterme.world/uk/products/recovery-essential-kit?srsltid=AfmBOoq7PrNhNJ7B7HlFI4q6iJRmxAPCyfM2MnCoxVbCYyoh8J2VOBTf",
-        wellness_kit_description="travel yoga mat або yoga strap, massage ball, mini foam roller",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Yoga+%26+Mobility",
+        wellness_kit_description="Ремінець для розтяжки, масажний м'яч та домашній mobility-набір.",
         price=39.99,
-        priority=82,
+        priority=92,
         default=False,
-        requires_all=["goal:flexibility", "location:home"],
-        requires_optional=["preference:yoga", "preference:mobility"],
+        requires_all=["offer-track:yoga-mobility"],
+        requires_optional=["mobility-focus:posture", "mobility-focus:hips-legs", "practice-time:evening"],
         excludes=[],
     )
     await create_offer(
-        name="Stress Reset Program — ментальний ресет + мікрозвички",
-        description="Digital: дихання/медитації/антистрес рутини",
+        name="Stress Reset Program",
+        description="Короткі щоденні практики для зниження стресу та відновлення ресурсу.",
         wellness_kit_name="Calm-Now Kit",
-        wellness_kit_image_url="https://placehold.co/600x400?text=Calm-Now+Kit",
-        wellness_kit_description="eye mask, aroma roll-on/mini candle, tea sticks, stress ball/fidget, quick reset card",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Stress+Reset+Program",
+        wellness_kit_description="Маска для сну, ролер з ароматом, антистрес-м'ячик та набір мікроритуалів.",
         price=29.99,
-        priority=70,
-        default=True,
-        requires_all=["stress:high"],
-        requires_optional=["goal:stress-relief", "sleep:poor", "energy:low"],
+        priority=91,
+        default=False,
+        requires_all=["offer-track:stress-reset"],
+        requires_optional=["stress-state:poor-sleep", "stress-state:burnout", "duration:5-10-min"],
         excludes=[],
     )
     await create_offer(
-        name="Quick Fit Micro-Workouts — 10–15 хв щодня",
-        description="Digital: короткі щоденні тренування",
+        name="Quick Fit Micro-Workouts",
+        description="Мікро-тренування на 10–15 хвилин для щільного графіка.",
         wellness_kit_name="Micro-Workout Kit",
-        wellness_kit_image_url="https://placehold.co/600x400?text=Micro-Workout+Kit",
-        wellness_kit_description="slider discs, mini loop bands, шейкер/пляшка, mini routine card",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Quick+Fit+Micro-Workouts",
+        wellness_kit_description="Слайдери, міні-бенди, пляшка для води та короткі мікро-комплекси на кожен день.",
         price=34.99,
         priority=95,
         default=False,
-        requires_all=["goal:weight-loss", "location:home", "workout-time:10-15-min"],
-        requires_optional=["preference:short-sessions", "level:beginner"],
+        requires_all=["offer-track:micro"],
+        requires_optional=["micro-goal:fat-burn", "micro-goal:tone", "location:office"],
         excludes=[],
     )
 
@@ -479,25 +562,39 @@ async def bootstrap_mock_data(settings: Settings) -> None:
     )
     ordered_questions = [
         q1,
-        q2,
-        q3,
-        q4,
-        q5,
-        q6,
-        q7,
-        q8,
-        q9,
-        q10,
-        q11,
-        q12,
-        q13,
-        q14,
-        q15,
-        q16,
-        q17,
-        q18,
-        q19,
-        q20,
+        q2a,
+        q3a,
+        q4a,
+        q5a,
+        q6a,
+        q7a,
+        q2b,
+        q3b,
+        q4b,
+        q5b,
+        q6b,
+        q7b,
+        q4c,
+        q5c,
+        q6c,
+        q2e,
+        q3e,
+        q4e,
+        q5e,
+        q6e,
+        q7e,
+        q2f,
+        q3f,
+        q4f,
+        q5f,
+        q6f,
+        q2g,
+        q3g,
+        q4g,
+        q5g,
+        q6g,
+        q4m,
+        q5m,
     ]
     for position, question in enumerate(ordered_questions, start=1):
         await FlowQuestion.create(
@@ -506,11 +603,22 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             position=position,
         )
 
-    loc_home_answer = q5_answers["Вдома"]
-    loc_gym_answer = q5_answers["У залі"]
-    loc_outdoor_answer = q5_answers["На вулиці"]
-    injuries_yes_answer = q11_answers["Так, є"]
-    injuries_no_answer = q11_answers["Ні, немає"]
+    goal_weight_loss_answer = q1_answers["Схуднути та спалити жир"]
+    goal_muscle_gain_answer = q1_answers["Набрати м'язи та рельєф"]
+    goal_run_answer = q1_answers["Почати бігати / підготуватися до 5K"]
+    goal_mobility_answer = q1_answers["Гнучкість, постава, мобільність"]
+    goal_stress_answer = q1_answers["Знизити стрес, відновитися"]
+
+    restrictive_a_answers = [
+        q5a_answers["Болять коліна або суглоби"],
+        q5a_answers["Проблеми зі спиною або поперек"],
+        q5a_answers["Вагітність або післяпологовий період"],
+    ]
+    restrictive_b_answers = [
+        q6b_answers["Болять коліна або суглоби"],
+        q6b_answers["Проблеми зі спиною або поперек"],
+        q6b_answers["Вагітність або післяпологовий період"],
+    ]
 
     async def create_transition(
         from_question: Question,
@@ -529,31 +637,64 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         for answer in answers or []:
             await FlowTransitionAnswer.create(transition=transition, answer=answer)
 
-    await create_transition(q1, q2, "always", 10)
-    await create_transition(q2, q3, "always", 10)
-    await create_transition(q3, q4, "always", 10)
-    await create_transition(q4, q5, "always", 10)
+    await create_transition(q1, q2a, "answer_any", 10, [goal_weight_loss_answer])
+    await create_transition(q1, q2b, "answer_any", 20, [goal_muscle_gain_answer])
+    await create_transition(q1, q2e, "answer_any", 30, [goal_run_answer])
+    await create_transition(q1, q2f, "answer_any", 40, [goal_mobility_answer])
+    await create_transition(q1, q2g, "answer_any", 50, [goal_stress_answer])
 
-    await create_transition(q5, q6, "answer_any", 10, [loc_home_answer])
-    await create_transition(q5, q7, "answer_any", 20, [loc_gym_answer])
-    await create_transition(q5, q8, "answer_any", 30, [loc_outdoor_answer])
+    await create_transition(q2a, q3a, "always", 10)
+    await create_transition(q3a, q4a, "always", 10)
+    await create_transition(q4a, q5a, "always", 10)
+    await create_transition(q5a, q4c, "answer_any", 10, restrictive_a_answers)
+    await create_transition(q5a, q6a, "answer_any", 20, [q5a_answers["Немає обмежень — все ок"]])
+    await create_transition(q6a, q7a, "always", 10)
+    await create_transition(q7a, q4m, "answer_any", 10, [q7a_answers["До 15 хв"]])
+    await create_transition(
+        q7a,
+        None,
+        "answer_any",
+        20,
+        [q7a_answers["20–30 хвилин"], q7a_answers["30–60 хвилин"]],
+    )
 
-    await create_transition(q6, q9, "always", 10)
-    await create_transition(q7, q9, "always", 10)
-    await create_transition(q8, q9, "always", 10)
+    await create_transition(q2b, q3b, "always", 10)
+    await create_transition(q3b, q4b, "always", 10)
+    await create_transition(q4b, q5b, "always", 10)
+    await create_transition(q5b, q6b, "always", 10)
+    await create_transition(q6b, q4c, "answer_any", 10, restrictive_b_answers)
+    await create_transition(q6b, q7b, "answer_any", 20, [q6b_answers["Немає обмежень — все ок"]])
+    await create_transition(q7b, q4m, "answer_any", 10, [q7b_answers["До 15 хв"]])
+    await create_transition(
+        q7b,
+        None,
+        "answer_any",
+        20,
+        [q7b_answers["20–30 хвилин"], q7b_answers["30–60 хвилин"]],
+    )
 
-    await create_transition(q9, q10, "always", 10)
-    await create_transition(q10, q11, "always", 10)
+    await create_transition(q4c, q5c, "always", 10)
+    await create_transition(q5c, q6c, "always", 10)
+    await create_transition(q6c, None, "always", 10)
 
-    await create_transition(q11, q12, "answer_any", 10, [injuries_yes_answer])
-    await create_transition(q11, q13, "answer_any", 20, [injuries_no_answer])
-    await create_transition(q12, q13, "always", 10)
+    await create_transition(q2e, q3e, "always", 10)
+    await create_transition(q3e, q4e, "always", 10)
+    await create_transition(q4e, q5e, "always", 10)
+    await create_transition(q5e, q6e, "always", 10)
+    await create_transition(q6e, q7e, "always", 10)
+    await create_transition(q7e, None, "always", 10)
 
-    await create_transition(q13, q14, "always", 10)
-    await create_transition(q14, q15, "always", 10)
-    await create_transition(q15, q16, "always", 10)
-    await create_transition(q16, q17, "always", 10)
-    await create_transition(q17, q18, "always", 10)
-    await create_transition(q18, q19, "always", 10)
-    await create_transition(q19, q20, "always", 10)
-    await create_transition(q20, None, "always", 10)
+    await create_transition(q2f, q3f, "always", 10)
+    await create_transition(q3f, q4f, "always", 10)
+    await create_transition(q4f, q5f, "always", 10)
+    await create_transition(q5f, q6f, "always", 10)
+    await create_transition(q6f, None, "always", 10)
+
+    await create_transition(q2g, q3g, "always", 10)
+    await create_transition(q3g, q4g, "always", 10)
+    await create_transition(q4g, q5g, "always", 10)
+    await create_transition(q5g, q6g, "always", 10)
+    await create_transition(q6g, None, "always", 10)
+
+    await create_transition(q4m, q5m, "always", 10)
+    await create_transition(q5m, None, "always", 10)

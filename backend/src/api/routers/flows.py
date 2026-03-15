@@ -230,6 +230,9 @@ async def set_flow_questions(
         )
 
 
+PreparedFlowTransition = tuple[FlowTransitionCreateRequest, list[QuestionAnswer]]
+
+
 def validate_transition_payload(payload: FlowTransitionCreateRequest) -> None:
     if payload.condition_type == FlowTransitionCondition.always and payload.answer_ids:
         raise HTTPException(
@@ -244,13 +247,11 @@ def validate_transition_payload(payload: FlowTransitionCreateRequest) -> None:
             )
 
 
-async def set_flow_transitions(
-    flow: Flow,
+async def prepare_flow_transitions(
     transitions: list[FlowTransitionCreateRequest],
     question_map: dict[int, Question],
-) -> None:
-    prepared_transitions: list[tuple[FlowTransitionCreateRequest, list[QuestionAnswer]]] = []
-
+) -> list[PreparedFlowTransition]:
+    prepared_transitions: list[PreparedFlowTransition] = []
     for transition_payload in transitions:
         validate_transition_payload(transition_payload)
 
@@ -279,6 +280,13 @@ async def set_flow_transitions(
                 )
         prepared_transitions.append((transition_payload, list(answer_map.values())))
 
+    return prepared_transitions
+
+
+async def replace_flow_transitions(
+    flow: Flow,
+    prepared_transitions: list[PreparedFlowTransition],
+) -> None:
     await FlowTransition.filter(flow=flow).delete()
 
     for transition_payload, answers in prepared_transitions:
@@ -294,6 +302,15 @@ async def set_flow_transitions(
                 transition=transition,
                 answer=answer,
             )
+
+
+async def set_flow_transitions(
+    flow: Flow,
+    transitions: list[FlowTransitionCreateRequest],
+    question_map: dict[int, Question],
+) -> None:
+    prepared_transitions = await prepare_flow_transitions(transitions=transitions, question_map=question_map)
+    await replace_flow_transitions(flow=flow, prepared_transitions=prepared_transitions)
 
 
 async def ensure_only_one_active(active_flow_id: int) -> None:
@@ -888,13 +905,17 @@ async def rollback_flow_to_revision(
             )
 
     question_map = await resolve_questions_by_ids(snapshot.question_ids)
+    prepared_transitions = await prepare_flow_transitions(
+        transitions=snapshot.transitions,
+        question_map=question_map,
+    )
 
     flow.name = snapshot.name
     flow.is_active = snapshot.is_active
     await flow.save()
 
     await set_flow_questions(flow=flow, question_ids=snapshot.question_ids, question_map=question_map)
-    await set_flow_transitions(flow=flow, transitions=snapshot.transitions, question_map=question_map)
+    await replace_flow_transitions(flow=flow, prepared_transitions=prepared_transitions)
 
     if flow.is_active:
         await ensure_only_one_active(flow.id)
