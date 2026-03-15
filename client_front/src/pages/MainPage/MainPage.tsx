@@ -57,7 +57,9 @@ export default function MainPage() {
 					<br />
 					для тебе
 				</h1>
-				<p className="text-[11px] font-bold tracking-[0.12em] text-gray-400 uppercase mb-6">Обери свій рівень, та отримай персональний план</p>
+				<p className="text-[11px] font-bold tracking-[0.12em] text-gray-400 uppercase mb-6">
+					Обери свій рівень, та отримай персональний план
+				</p>
 
 				{/* Marquee */}
 				<div className="overflow-hidden mb-5 -mx-5">
@@ -94,19 +96,18 @@ export default function MainPage() {
 				</div>
 
 				{/* CTA */}
-			<Button
-  onClick={() => navigate(ROUTES.QUIZ)}
-  className="w-full bg-[#15803d] hover:bg-[#166534] active:scale-[0.98] text-white rounded-2xl py-4 h-auto text-[15px] font-bold shadow-none border-none transition-all tracking-wide"
->
-  Почати квіз →
-</Button>
+				<Button
+					onClick={() => navigate(ROUTES.QUIZ)}
+					className="w-full bg-[#15803d] hover:bg-[#166534] active:scale-[0.98] text-white rounded-2xl py-4 h-auto text-[15px] font-bold shadow-none border-none transition-all tracking-wide">
+					Почати квіз →
+				</Button>
 				<p className="text-center text-[11px] text-gray-400 mt-3 leading-relaxed px-2">
 					Натискаючи кнопку, ви погоджуєтесь з <span className="text-[#1a7a4a] font-medium cursor-pointer">Умовами сервісу</span>{" "}
 					| <span className="text-[#1a7a4a] font-medium cursor-pointer">Політикою конфіденційності</span>
 				</p>
 
 				{/* Stats */}
-				<div className="flex justify-around pt-6 mt-4 border-t border-gray-100">
+				<div className="flex justify-around pt-6 mt-4 border-t border-gray-100 gap-x-4">
 					{stats.map((s) => (
 						<div key={s.value} className="text-center">
 							<div className="text-[22px] font-black text-[#1a7a4a]">{s.value}</div>
