@@ -38,6 +38,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:3001",
         "https://healthfit.artemka1806.dev",
+        "https://admin.healthfit.artemka1806.dev"
     ],
     allow_credentials=True,
     allow_methods=["*"],
