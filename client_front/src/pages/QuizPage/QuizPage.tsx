@@ -24,6 +24,18 @@ export default function QuizPage() {
 	const [invalidQuestionId, setInvalidQuestionId] = useState<number | null>(null);
 
 	useEffect(() => {
+		if (!currentQuestionId || !flow) return;
+		const flowQ = flow.questions.find((q) => q.question.id === currentQuestionId);
+		if (!flowQ) return;
+		const q = flowQ.question;
+		if (q.type === "manual_input" && q.manual_input) {
+			if (answers[q.id] === undefined) {
+				setAnswers((a) => ({ ...a, [q.id]: q.manual_input!.min }));
+			}
+		}
+	}, [currentQuestionId]);
+	
+	useEffect(() => {
 		async function load() {
 			const result = await getActiveFlow();
 			if (!result.success) {
