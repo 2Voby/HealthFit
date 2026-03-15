@@ -17,13 +17,7 @@ interface DropAnswerData {
   answerId: string
 }
 
-interface DropOfferZoneData {
-  type: 'offer-zone'
-  nodeId: string
-  zone: 'requires_all' | 'requires_optional' | 'excludes'
-}
-
-type DropData = DropAnswerData | DropOfferZoneData
+type DropData = DropAnswerData
 
 export function DndContextWrapper({ children }: { children: React.ReactNode }) {
   const [activeAttribute, setActiveAttribute] = useState<{ id: number; name: string } | null>(null)
@@ -66,14 +60,6 @@ export function DndContextWrapper({ children }: { children: React.ReactNode }) {
       if (!answer || answer.attributes.includes(attrId)) return
       store.updateAnswer(dropData.nodeId, dropData.answerId, {
         attributes: [...answer.attributes, attrId],
-      })
-    } else if (dropData.type === 'offer-zone') {
-      const node = store.nodes.find((n) => n.id === dropData.nodeId)
-      if (node?.data.kind !== 'offer') return
-      const currentArray = node.data[dropData.zone] as number[]
-      if (currentArray.includes(attrId)) return
-      store.updateNodeData(dropData.nodeId, {
-        [dropData.zone]: [...currentArray, attrId],
       })
     }
   }

@@ -29,11 +29,6 @@ export interface InfoPageNodeData {
 export interface OfferNodeData {
   [key: string]: unknown
   kind: 'offer'
-  offerId: string
-  label: string
-  requires_all: number[]
-  requires_optional: number[]
-  excludes: number[]
 }
 
 export type QuizNodeData = QuestionNodeData | InfoPageNodeData | OfferNodeData
