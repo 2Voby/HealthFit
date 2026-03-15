@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { useReactFlow } from '@xyflow/react'
-import { LayoutDashboard, Save, MoreHorizontal, Download, Copy, Trash2, Plus, Pencil, LogOut } from 'lucide-react'
+import { LayoutDashboard, Save, MoreHorizontal, Download, Copy, Trash2, Plus, Pencil, LogOut, Star } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -329,6 +329,18 @@ export function TopBar() {
     )
   }
 
+  const handleSetActive = () => {
+    if (!activeFlowId) return
+    if (activeFlow?.is_active) return
+    updateFlow.mutate(
+      { id: activeFlowId, data: { is_active: true } },
+      {
+        onSuccess: () => toast.success('Flow set as active'),
+        onError: (err) => toast.error(err.message || 'Failed to set active'),
+      },
+    )
+  }
+
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
       onSuccess: () => clearUser(),
@@ -450,6 +462,11 @@ export function TopBar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleSetActive} disabled={activeFlow?.is_active}>
+                <Star className={cn('h-4 w-4 mr-2', activeFlow?.is_active && 'fill-current text-amber-500')} />
+                {activeFlow?.is_active ? 'Currently active' : 'Set as active'}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleExport}>
                 <Download className="h-4 w-4 mr-2" />
                 Export JSON
