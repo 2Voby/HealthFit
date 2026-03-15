@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { ArrowRight, BadgeCheck, Clock3, Loader2, Sparkles } from "lucide-react";
 import { getSuggestedOffer } from "@/api/requests";
-import type { OfferSelectionResponse } from "@/types/offer.types";
+import type { OfferSelectionResponse } from "@/types/offer";
 
 export default function ResultPage() {
 	const { state } = useLocation();
