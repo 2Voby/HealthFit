@@ -1,5 +1,5 @@
 // src/types/flow.ts
-export type QuestionType = "singe_choise" | "multiple_choise" | "manual_input" | "text";
+export type QuestionType = "singe_choise" | "multiple_choise" | "number_input" | "text";
 
 export interface ManualInputConfig {
   type: "number";

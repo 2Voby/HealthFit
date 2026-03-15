@@ -5,6 +5,7 @@ import { OfferSelectionResponse } from "@/types/offer";
 
 export async function getActiveFlow(): Promise<ApiResult<Flow>> {
   try {
+    console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
     const response = await client.get<Flow>("v1/flows/active");
     return { success: true, data: response.data };
   } catch (error: any) {
