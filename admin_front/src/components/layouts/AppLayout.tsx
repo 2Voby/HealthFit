@@ -4,19 +4,13 @@ import { LayoutDashboard, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { useAuthStore } from '@/store/auth.store'
-import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 export function AppLayout() {
   const navigate = useNavigate()
   const { user, clearUser } = useAuthStore()
 
-  async function handleLogout() {
-    try {
-      await api.post('/auth/logout')
-    } catch {
-      // ignore — clear local state anyway
-    }
+  function handleLogout() {
     clearUser()
     navigate('/login')
   }
@@ -26,7 +20,7 @@ export function AppLayout() {
       {/* Sidebar */}
       <aside className="flex w-56 flex-col border-r bg-muted/40">
         <div className="flex h-14 items-center px-4 font-semibold">
-          BebraMe
+          HealthFit
         </div>
         <Separator />
         <nav className="flex-1 space-y-1 p-2">
@@ -48,7 +42,7 @@ export function AppLayout() {
         <div className="p-2">
           {user && (
             <p className="mb-2 truncate px-3 text-xs text-muted-foreground">
-              {user.email}
+              {user.login}
             </p>
           )}
           <Button

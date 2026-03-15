@@ -15,7 +15,6 @@ import type {
   QuizGraph,
   NodeKind,
   Answer,
-  EdgeCondition,
 } from '../types'
 import { NODE_KINDS } from '../constants'
 import { generateId } from '../utils/id'
@@ -41,7 +40,7 @@ interface EditorState {
   removeAnswer: (nodeId: string, answerId: string) => void
   updateAnswer: (nodeId: string, answerId: string, patch: Partial<Answer>) => void
 
-  updateEdgeConditions: (edgeId: string, conditions: EdgeCondition[]) => void
+  updateEdgeData: (edgeId: string, data: Record<string, unknown>) => void
   removeEdge: (edgeId: string) => void
 
   setViewport: (viewport: Viewport) => void
@@ -84,9 +83,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (hasCycle(edges, { source: connection.source, target: connection.target })) {
       return // reject cycle
     }
+    // Only one outgoing edge per answer handle
+    if (connection.sourceHandle) {
+      const hasExisting = edges.some(
+        (e) => e.source === connection.source && e.sourceHandle === connection.sourceHandle,
+      )
+      if (hasExisting) return
+    }
     set((s) => ({
       edges: addEdge(
-        { ...connection, type: 'conditional', data: { conditions: [] } },
+        { ...connection, type: 'conditional', data: {} },
         s.edges,
       ),
       isDirty: true,
@@ -140,7 +146,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             ...n.data,
             answers: [
               ...n.data.answers,
-              { id: generateId(), text: `Option ${n.data.answers.length + 1}`, value: '' },
+              { id: generateId(), text: `Option ${n.data.answers.length + 1}`, attributes: [] },
             ],
           },
         }
@@ -185,10 +191,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }))
   },
 
-  updateEdgeConditions: (edgeId, conditions) => {
+  updateEdgeData: (edgeId, data) => {
     set((s) => ({
       edges: s.edges.map((e) =>
-        e.id === edgeId ? { ...e, data: { ...e.data, conditions } } : e,
+        e.id === edgeId ? { ...e, data: { ...e.data, ...data } } : e,
       ),
       isDirty: true,
     }))

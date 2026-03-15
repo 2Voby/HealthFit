@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flow Visualizer</title>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --panel: #ffffff;
+      --line: #d4dbe6;
+      --ink: #1f2b3d;
+      --muted: #5f6f86;
+      --primary: #1f6feb;
+      --ok: #0f8f5f;
+      --warn: #c24a2f;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, #eef3fa 0%, var(--bg) 100%);
+    }
+
+    .wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .row {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 980px) {
+      .row { grid-template-columns: 2fr 1fr 1fr 1fr; }
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    input, select, button {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font: inherit;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    button {
+      cursor: pointer;
+      background: var(--primary);
+      color: #fff;
+      border-color: #1f65cf;
+      font-weight: 600;
+    }
+
+    button.secondary {
+      background: #44556b;
+      border-color: #3a4a5d;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .badge {
+      font-size: 12px;
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: #edf3ff;
+      border: 1px solid #ccdaff;
+      color: #2e4d91;
+    }
+
+    .badge.ok {
+      background: #ebfbf3;
+      border-color: #bce9d3;
+      color: #1d6d4b;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f8fbff;
+      min-height: 500px;
+    }
+
+    #graph {
+      position: relative;
+      min-width: 100%;
+      min-height: 500px;
+    }
+
+    #edges {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .node {
+      position: absolute;
+      width: 240px;
+      border: 1px solid #cdd7e6;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 8px 16px rgba(37, 51, 74, 0.08);
+      padding: 10px;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .node.dragging {
+      cursor: grabbing;
+    }
+
+    .node h3 {
+      margin: 0 0 6px;
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    .tiny {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .node-end {
+      border-style: dashed;
+      background: #f5fff9;
+      border-color: #93d8b5;
+    }
+
+    .legend {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    #log {
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      background: #121a29;
+      color: #d7e2f1;
+      border-radius: 10px;
+      padding: 10px;
+      min-height: 90px;
+      max-height: 180px;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <section class="panel">
+    <h1 style="margin:0 0 8px;">Flow Visualizer</h1>
+    <div class="row">
+      <div>
+        <label for="baseUrl">Base API URL</label>
+        <input id="baseUrl" value="">
+      </div>
+      <div>
+        <label for="flowSelect">Flow</label>
+        <select id="flowSelect"></select>
+      </div>
+      <div style="display:flex;align-items:flex-end;">
+        <button id="btnReload">Reload flows</button>
+      </div>
+      <div style="display:flex;align-items:flex-end;">
+        <button id="btnActive" class="secondary">Load active</button>
+      </div>
+    </div>
+
+    <div class="meta">
+      <span class="badge" id="flowIdBadge">flow: -</span>
+      <span class="badge" id="flowNameBadge">name: -</span>
+      <span class="badge" id="flowActiveBadge">active: -</span>
+      <span class="badge">nodes: <span id="nodesCount">0</span></span>
+      <span class="badge">transitions: <span id="transitionsCount">0</span></span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="canvas-wrap">
+      <div id="graph">
+        <svg id="edges">
+          <defs>
+            <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L10,4 L0,8 z" fill="#5a6d87"></path>
+            </marker>
+          </defs>
+        </svg>
+      </div>
+    </div>
+    <div class="legend">Стрілка = transition. Підпис: condition_type | answer_ids | priority.</div>
+  </section>
+
+  <section class="panel">
+    <div id="log">Ready.</div>
+  </section>
+</div>
+
+<script>
+  const END_NODE_KEY = "__end__";
+
+  const state = {
+    flows: [],
+    flow: null,
+    transitions: [],
+    nodeMap: new Map(),
+    drag: null,
+  };
+
+  const byId = (id) => document.getElementById(id);
+
+  function escapeHtml(raw) {
+    return String(raw)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll("\"", "&quot;");
+  }
+
+  function log(message, payload) {
+    const stamp = new Date().toLocaleTimeString();
+    const text = `[${stamp}] ${message}\n${payload ? JSON.stringify(payload, null, 2) : ""}\n\n`;
+    byId("log").textContent = text + byId("log").textContent;
+  }
+
+  function getBaseUrl() {
+    const input = byId("baseUrl").value.trim();
+    if (input) return input.replace(/\/+$/, "");
+    return `${window.location.origin}/v1`;
+  }
+
+  async function api(path) {
+    const url = `${getBaseUrl()}${path}`;
+    const res = await fetch(url, { credentials: "include" });
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch (_) { data = text; }
+    if (!res.ok) {
+      log(`ERROR ${res.status} ${path}`, data);
+      throw new Error(`${res.status}: ${typeof data === "string" ? data : JSON.stringify(data)}`);
+    }
+    return data;
+  }
+
+  function setMeta(flow) {
+    byId("flowIdBadge").textContent = `flow: ${flow ? flow.id : "-"}`;
+    byId("flowNameBadge").textContent = `name: ${flow ? flow.name : "-"}`;
+    const activeBadge = byId("flowActiveBadge");
+    activeBadge.textContent = `active: ${flow ? String(!!flow.is_active) : "-"}`;
+    activeBadge.classList.toggle("ok", !!(flow && flow.is_active));
+    byId("nodesCount").textContent = flow ? String((flow.questions || []).length) : "0";
+    byId("transitionsCount").textContent = flow ? String((flow.transitions || []).length) : "0";
+  }
+
+  function flowById(id) {
+    return state.flows.find((f) => f.id === Number(id)) || null;
+  }
+
+  function updateFlowSelect() {
+    const select = byId("flowSelect");
+    const options = ['<option value="">-- select flow --</option>'].concat(
+      state.flows.map((f) => `<option value="${f.id}">#${f.id} ${escapeHtml(f.name)}${f.is_active ? " (active)" : ""}</option>`)
+    );
+    select.innerHTML = options.join("");
+    if (state.flow) select.value = String(state.flow.id);
+  }
+
+  function computeLayers(flow) {
+    const questions = [...(flow.questions || [])].sort((a, b) => a.position - b.position);
+    const ids = questions.map((q) => q.question_id);
+    const layer = {};
+    ids.forEach((id) => { layer[id] = 0; });
+
+    const transitions = [...(flow.transitions || [])].sort((a, b) => a.priority - b.priority || a.id - b.id);
+    for (let pass = 0; pass < ids.length; pass += 1) {
+      for (const t of transitions) {
+        if (t.to_question_id == null) continue;
+        if (layer[t.from_question_id] == null || layer[t.to_question_id] == null) continue;
+        layer[t.to_question_id] = Math.max(layer[t.to_question_id], layer[t.from_question_id] + 1);
+      }
+    }
+    return layer;
+  }
+
+  function drawEdges() {
+    const svg = byId("edges");
+    svg.querySelectorAll(".edge-line,.edge-label").forEach((el) => el.remove());
+
+    for (const tr of state.transitions) {
+      const from = state.nodeMap.get(tr.from_question_id);
+      const toKey = tr.to_question_id != null ? tr.to_question_id : END_NODE_KEY;
+      const to = state.nodeMap.get(toKey);
+      if (!from || !to) continue;
+
+      const x1 = from.x + from.w;
+      const y1 = from.y + from.h / 2;
+      const x2 = to.x;
+      const y2 = to.y + to.h / 2;
+      const curve = Math.max(60, (x2 - x1) / 2);
+
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("class", "edge-line");
+      path.setAttribute("d", `M ${x1} ${y1} C ${x1 + curve} ${y1}, ${x2 - curve} ${y2}, ${x2} ${y2}`);
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", "#5a6d87");
+      path.setAttribute("stroke-width", "2");
+      path.setAttribute("marker-end", "url(#arrow)");
+      svg.appendChild(path);
+
+      const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      label.setAttribute("class", "edge-label");
+      label.setAttribute("x", String((x1 + x2) / 2));
+      label.setAttribute("y", String((y1 + y2) / 2 - 6));
+      label.setAttribute("text-anchor", "middle");
+      label.setAttribute("font-size", "11");
+      label.setAttribute("fill", "#344b67");
+      const answers = tr.answer_ids && tr.answer_ids.length ? tr.answer_ids.join(",") : "-";
+      label.textContent = `${tr.condition_type} | ans:${answers} | p:${tr.priority}`;
+      svg.appendChild(label);
+    }
+  }
+
+  function bindDraggable(node, nodeKey) {
+    node.addEventListener("pointerdown", (event) => {
+      const pointerId = event.pointerId;
+      node.setPointerCapture(pointerId);
+      node.classList.add("dragging");
+
+      state.drag = {
+        pointerId,
+        nodeKey,
+        nodeEl: node,
+        dx: event.clientX - node.getBoundingClientRect().left,
+        dy: event.clientY - node.getBoundingClientRect().top,
+      };
+    });
+  }
+
+  function onPointerMove(event) {
+    if (!state.drag || event.pointerId !== state.drag.pointerId) return;
+
+    const graph = byId("graph");
+    const rect = graph.getBoundingClientRect();
+    const nodeData = state.nodeMap.get(state.drag.nodeKey);
+    if (!nodeData) return;
+
+    let x = event.clientX - rect.left - state.drag.dx;
+    let y = event.clientY - rect.top - state.drag.dy;
+
+    x = Math.max(0, Math.min(x, graph.clientWidth - nodeData.w));
+    y = Math.max(0, Math.min(y, graph.clientHeight - nodeData.h));
+
+    state.drag.nodeEl.style.left = `${x}px`;
+    state.drag.nodeEl.style.top = `${y}px`;
+    nodeData.x = x;
+    nodeData.y = y;
+    state.nodeMap.set(state.drag.nodeKey, nodeData);
+
+    drawEdges();
+  }
+
+  function onPointerUp(event) {
+    if (!state.drag || event.pointerId !== state.drag.pointerId) return;
+    state.drag.nodeEl.classList.remove("dragging");
+    try {
+      state.drag.nodeEl.releasePointerCapture(state.drag.pointerId);
+    } catch (_) {}
+    state.drag = null;
+  }
+
+  function renderFlow(flow) {
+    const graph = byId("graph");
+    const svg = byId("edges");
+    state.nodeMap.clear();
+    state.transitions = [];
+
+    if (!flow) {
+      graph.querySelectorAll(".node").forEach((n) => n.remove());
+      svg.querySelectorAll(".edge-line,.edge-label").forEach((el) => el.remove());
+      setMeta(null);
+      return;
+    }
+
+    const questions = [...(flow.questions || [])].sort((a, b) => a.position - b.position);
+    const transitions = [...(flow.transitions || [])];
+    state.transitions = transitions;
+    const layers = computeLayers(flow);
+    const maxLayer = Math.max(0, ...questions.map((q) => layers[q.question_id] || 0));
+
+    const xGap = 320;
+    const yGap = 130;
+    const startX = 36;
+    const startY = 28;
+    const width = startX + (maxLayer + 2) * xGap;
+    const height = Math.max(500, startY + (questions.length + 2) * yGap);
+
+    graph.style.width = `${width}px`;
+    graph.style.height = `${height}px`;
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    svg.setAttribute("width", String(width));
+    svg.setAttribute("height", String(height));
+
+    graph.querySelectorAll(".node").forEach((n) => n.remove());
+    svg.querySelectorAll(".edge-line,.edge-label").forEach((el) => el.remove());
+
+    questions.forEach((item, index) => {
+      const q = item.question;
+      const layer = layers[item.question_id] || 0;
+      const x = startX + layer * xGap;
+      const y = startY + index * yGap;
+
+      const node = document.createElement("div");
+      node.className = "node";
+      node.style.left = `${x}px`;
+      node.style.top = `${y}px`;
+      node.innerHTML = `
+        <h3>#${q.id} ${escapeHtml(q.text)}</h3>
+        <div class="tiny">type: ${escapeHtml(q.type)} | requires: ${q.requires ? "true" : "false"}</div>
+        <div class="tiny">answers: ${(q.answers || []).length} | pos: ${item.position}</div>
+      `;
+      graph.appendChild(node);
+      state.nodeMap.set(item.question_id, { x, y, w: 240, h: 86 });
+      bindDraggable(node, item.question_id);
+    });
+
+    const endX = startX + (maxLayer + 1) * xGap;
+    const endY = startY + Math.max(0, questions.length - 1) * yGap;
+    const endNode = document.createElement("div");
+    endNode.className = "node node-end";
+    endNode.style.left = `${endX}px`;
+    endNode.style.top = `${endY}px`;
+    endNode.innerHTML = `
+      <h3>END</h3>
+      <div class="tiny">Flow finished</div>
+    `;
+    graph.appendChild(endNode);
+    state.nodeMap.set(END_NODE_KEY, { x: endX, y: endY, w: 240, h: 70 });
+    bindDraggable(endNode, END_NODE_KEY);
+    drawEdges();
+
+    setMeta(flow);
+  }
+
+  async function reloadFlows() {
+    const data = await api("/flows/?offset=0&limit=200");
+    state.flows = data.items || [];
+    updateFlowSelect();
+    if (state.flow) {
+      const fresh = flowById(state.flow.id);
+      state.flow = fresh || null;
+    }
+    renderFlow(state.flow);
+    log("Flows loaded", { total: state.flows.length });
+  }
+
+  async function loadActive() {
+    const flow = await api("/flows/active");
+    state.flow = flow;
+    updateFlowSelect();
+    renderFlow(flow);
+    log("Active flow loaded", { id: flow.id, name: flow.name });
+  }
+
+  function init() {
+    const defaultBase = `${window.location.origin}/v1`;
+    byId("baseUrl").value = defaultBase;
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+
+    byId("btnReload").addEventListener("click", async () => {
+      try { await reloadFlows(); } catch (e) { alert(String(e)); }
+    });
+    byId("btnActive").addEventListener("click", async () => {
+      try { await loadActive(); } catch (e) { alert(String(e)); }
+    });
+    byId("flowSelect").addEventListener("change", () => {
+      const id = byId("flowSelect").value;
+      state.flow = id ? flowById(id) : null;
+      renderFlow(state.flow);
+    });
+
+    reloadFlows().catch((e) => {
+      log("Initial load failed", { error: String(e) });
+    });
+  }
+
+  init();
+</script>
+</body>
+</html>

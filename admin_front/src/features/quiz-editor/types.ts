@@ -5,7 +5,8 @@ export type QuestionType = 'single_choice' | 'multi_choice' | 'input_number' | '
 export interface Answer {
   id: string
   text: string
-  value: string
+  attributes: number[]
+  backendId?: number
 }
 
 export interface QuestionNodeData {
@@ -13,8 +14,9 @@ export interface QuestionNodeData {
   kind: 'question'
   text: string
   questionType: QuestionType
-  attribute: string
+  requires: boolean
   answers: Answer[]
+  backendQuestionId?: number
 }
 
 export interface InfoPageNodeData {
@@ -29,27 +31,21 @@ export interface OfferNodeData {
   kind: 'offer'
   offerId: string
   label: string
+  requires_all: number[]
+  requires_optional: number[]
+  excludes: number[]
 }
 
 export type QuizNodeData = QuestionNodeData | InfoPageNodeData | OfferNodeData
 
 export type NodeKind = QuizNodeData['kind']
 
-export type ConditionOperator = 'eq' | 'neq' | 'gt' | 'lt' | 'in' | 'contains'
-
-export interface EdgeCondition {
-  attribute: string
-  operator: ConditionOperator
-  value: string | number | string[]
-}
-
-export interface ConditionalEdgeData {
-  conditions: EdgeCondition[]
+export interface TransitionEdgeData {
   [key: string]: unknown
 }
 
 export type QuizNode = Node<QuizNodeData>
-export type QuizEdge = Edge<ConditionalEdgeData>
+export type QuizEdge = Edge<TransitionEdgeData>
 
 export interface QuizGraph {
   nodes: QuizNode[]

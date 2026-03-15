@@ -1,15 +1,31 @@
 import { useState, useRef } from 'react'
 import { useReactFlow } from '@xyflow/react'
-import { LayoutDashboard, Save, MoreHorizontal, Download, Copy, Trash2 } from 'lucide-react'
+import { LayoutDashboard, Save, MoreHorizontal, Download, Copy, Trash2, Plus, Pencil, LogOut } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Tooltip,
   TooltipContent,
@@ -19,22 +35,160 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { useEditorStore } from '../store/editor.store'
+import { useFlowStore } from '../store/flow.store'
+import { FlowHistoryPanel } from './FlowHistoryPanel'
+import { useFlows, useCreateFlow, useUpdateFlow, useDeleteFlow } from '@/hooks/use-flows'
+import { useLogout } from '@/hooks/use-auth'
+import { useAuthStore } from '@/store/auth.store'
+import { graphToFlow } from '../utils/graph-to-flow'
+
+function CreateFlowDialog() {
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState('')
+  const createFlow = useCreateFlow()
+
+  const handleCreate = () => {
+    if (!name.trim()) return
+    createFlow.mutate(
+      { name: name.trim() },
+      {
+        onSuccess: () => {
+          toast.success('Flow created')
+          setName('')
+          setOpen(false)
+        },
+        onError: (err) => toast.error(err.message || 'Failed to create flow'),
+      },
+    )
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" title="Create new flow">
+          <Plus className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Create new flow</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Input
+            placeholder="Flow name..."
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleCreate() }}
+            autoFocus
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button size="sm" onClick={handleCreate} disabled={!name.trim() || createFlow.isPending}>
+              {createFlow.isPending ? 'Creating...' : 'Create'}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function RenameFlowDialog() {
+  const [open, setOpen] = useState(false)
+  const activeFlowId = useFlowStore((s) => s.activeFlowId)
+  const { data: flowsData } = useFlows({ limit: 200 })
+  const flow = flowsData?.items.find((f) => f.id === activeFlowId)
+  const updateFlow = useUpdateFlow()
+  const [name, setName] = useState('')
+
+  const handleOpen = () => {
+    setName(flow?.name ?? '')
+    setOpen(true)
+  }
+
+  const handleRename = () => {
+    if (!name.trim() || !activeFlowId) return
+    updateFlow.mutate(
+      { id: activeFlowId, data: { name: name.trim() } },
+      {
+        onSuccess: () => {
+          toast.success('Flow renamed')
+          setOpen(false)
+        },
+        onError: (err) => toast.error(err.message || 'Failed to rename'),
+      },
+    )
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleOpen() }}>
+          <Pencil className="h-4 w-4 mr-2" />
+          Rename flow
+        </DropdownMenuItem>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Rename flow</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleRename() }}
+            autoFocus
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button size="sm" onClick={handleRename} disabled={!name.trim() || updateFlow.isPending}>
+              {updateFlow.isPending ? 'Saving...' : 'Rename'}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 export function TopBar() {
-  const quizName = useEditorStore((s) => s.quizName)
+  const { nodes, edges } = useEditorStore()
   const isDirty = useEditorStore((s) => s.isDirty)
-  const setQuizName = useEditorStore((s) => s.setQuizName)
   const autoLayout = useEditorStore((s) => s.autoLayout)
   const serializeGraph = useEditorStore((s) => s.serializeGraph)
+
+  const activeFlowId = useFlowStore((s) => s.activeFlowId)
+  const selectFlow = useFlowStore((s) => s.selectFlow)
+
+  const { data: flowsData } = useFlows({ limit: 200 })
+  const flows = flowsData?.items ?? []
+  const activeFlow = flows.find((f) => f.id === activeFlowId)
+
+  const updateFlow = useUpdateFlow()
+  const deleteFlow = useDeleteFlow()
+  const createFlow = useCreateFlow()
+  const logoutMutation = useLogout()
+  const clearUser = useAuthStore((s) => s.clearUser)
 
   const { fitView } = useReactFlow()
   const [editingName, setEditingName] = useState(false)
   const nameRef = useRef<HTMLInputElement>(null)
 
+  const quizName = activeFlow?.name ?? 'No flow selected'
+
   const handleSave = () => {
-    const data = serializeGraph()
-    console.log('Serialized graph:', data)
-    toast.success('Graph saved to console')
+    if (!activeFlowId) return
+    const flowUpdate = graphToFlow(nodes, edges)
+    updateFlow.mutate(
+      { id: activeFlowId, data: flowUpdate },
+      {
+        onSuccess: (updated) => {
+          selectFlow(updated)
+          toast.success('Saved')
+        },
+        onError: (err) => toast.error(err.message || 'Save failed'),
+      },
+    )
   }
 
   const handleExport = () => {
@@ -49,9 +203,99 @@ export function TopBar() {
     toast.success('Exported JSON')
   }
 
+  const handleFlowChange = (flowId: string) => {
+    if (isDirty) {
+      if (!window.confirm('You have unsaved changes. Switch flow anyway?')) return
+    }
+    const flow = flows.find((f) => f.id === Number(flowId))
+    if (flow) selectFlow(flow)
+  }
+
+  const handleDeleteFlow = () => {
+    if (!activeFlowId) return
+    if (flows.length <= 1) {
+      toast.error('Cannot delete the last flow')
+      return
+    }
+    if (!window.confirm('Delete this flow? This cannot be undone.')) return
+    deleteFlow.mutate(activeFlowId, {
+      onSuccess: () => toast.success('Flow deleted'),
+      onError: (err) => toast.error(err.message || 'Delete failed'),
+    })
+  }
+
+  const handleDuplicateFlow = () => {
+    if (!activeFlow) return
+    createFlow.mutate(
+      {
+        name: `${activeFlow.name} (copy)`,
+        is_active: false,
+        question_ids: activeFlow.questions.map((q) => q.question_id),
+        transitions: activeFlow.transitions.map((t) => ({
+          from_question_id: t.from_question_id,
+          to_question_id: t.to_question_id,
+          condition_type: t.condition_type,
+          answer_ids: t.answer_ids,
+          priority: t.priority,
+        })),
+      },
+      {
+        onSuccess: (newFlow) => {
+          selectFlow(newFlow)
+          toast.success('Flow duplicated')
+        },
+        onError: (err) => toast.error(err.message || 'Duplicate failed'),
+      },
+    )
+  }
+
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => clearUser(),
+      onError: () => clearUser(),
+    })
+  }
+
   return (
     <TooltipProvider delayDuration={300}>
       <div className="flex h-12 items-center border-b bg-background px-3 gap-2">
+        {/* Branding */}
+        <span className="text-sm font-bold tracking-tight text-primary shrink-0">
+          HealthFit
+        </span>
+
+        <Separator orientation="vertical" className="h-6" />
+
+        {/* Flow selector + create */}
+        <div className="flex items-center gap-1 shrink-0">
+          <Select
+            value={activeFlowId ? String(activeFlowId) : undefined}
+            onValueChange={handleFlowChange}
+          >
+            <SelectTrigger className="h-8 w-48 text-xs">
+              <SelectValue placeholder="Select flow..." />
+            </SelectTrigger>
+            <SelectContent>
+              {flows.map((f) => (
+                <SelectItem key={f.id} value={String(f.id)}>
+                  <span className="flex items-center gap-2">
+                    {f.name}
+                    {f.is_active && (
+                      <Badge variant="secondary" className="text-[9px] h-4 px-1 bg-green-100 text-green-700">
+                        Active
+                      </Badge>
+                    )}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <CreateFlowDialog />
+        </div>
+
+        <Separator orientation="vertical" className="h-6" />
+
         {/* Quiz name */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {editingName ? (
@@ -61,13 +305,17 @@ export function TopBar() {
               defaultValue={quizName}
               autoFocus
               onBlur={(e) => {
-                setQuizName(e.target.value || 'Untitled Quiz')
+                if (activeFlowId && e.target.value && e.target.value !== activeFlow?.name) {
+                  updateFlow.mutate(
+                    { id: activeFlowId, data: { name: e.target.value } },
+                    { onError: (err) => toast.error(err.message || 'Failed to rename') },
+                  )
+                }
                 setEditingName(false)
               }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.currentTarget.blur()
-                }
+                if (e.key === 'Enter') e.currentTarget.blur()
+                if (e.key === 'Escape') setEditingName(false)
               }}
             />
           ) : (
@@ -86,6 +334,8 @@ export function TopBar() {
 
         {/* Actions */}
         <div className="flex items-center gap-1">
+          <FlowHistoryPanel />
+
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { autoLayout(); requestAnimationFrame(() => fitView({ duration: 300 })) }}>
@@ -104,12 +354,13 @@ export function TopBar() {
                 size="sm"
                 className={cn('h-8 gap-1.5', isDirty && 'animate-pulse')}
                 onClick={handleSave}
+                disabled={!activeFlowId || updateFlow.isPending}
               >
                 <Save className="h-3.5 w-3.5" />
-                Save
+                {updateFlow.isPending ? 'Saving...' : 'Save'}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Save quiz (Ctrl+S)</TooltipContent>
+            <TooltipContent>Save flow (Ctrl+S)</TooltipContent>
           </Tooltip>
 
           <DropdownMenu>
@@ -123,16 +374,23 @@ export function TopBar() {
                 <Download className="h-4 w-4 mr-2" />
                 Export JSON
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast('Not implemented yet')}>
+              <DropdownMenuSeparator />
+              <RenameFlowDialog />
+              <DropdownMenuItem onClick={handleDuplicateFlow}>
                 <Copy className="h-4 w-4 mr-2" />
-                Duplicate quiz
+                Duplicate flow
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
-                onClick={() => toast('Not implemented yet')}
+                onClick={handleDeleteFlow}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete quiz
+                Delete flow
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -56,6 +56,11 @@ def test_offer_crud_and_selection_engine(admin_client) -> None:
     selected_offer_names = [item["offer"]["name"] for item in selection_items]
     assert excluded_name in selected_offer_names
     assert primary_name in selected_offer_names
+    primary_item = next(item for item in selection_items if item["offer"]["name"] == primary_name)
+    assert primary_item["matched_optional_count"] == 1
+    assert primary_item["total_optional_count"] == 1
+    assert primary_item["optional_coverage"] == 1.0
+    assert primary_item["missing_optional_ids"] == []
 
     selection_with_excluded_attr_response = admin_client.post(
         "/v1/offers/selection",
@@ -66,3 +71,69 @@ def test_offer_crud_and_selection_engine(admin_client) -> None:
     filtered_offer_names = [item["offer"]["name"] for item in filtered_items]
     assert primary_name in filtered_offer_names
     assert excluded_name not in filtered_offer_names
+
+
+def test_offer_constraints_conflict_validation(admin_client) -> None:
+    suffix = uuid4().hex[:8]
+    attr = create_attribute(admin_client, f"conflict_attr_{suffix}")
+
+    create_response = admin_client.post(
+        "/v1/offers/",
+        json={
+            "name": f"Conflict Offer {suffix}",
+            "description": "bad",
+            "price": 10.0,
+            "requires_all": [attr],
+            "requires_optional": [],
+            "excludes": [attr],
+            "priority": 1,
+        },
+    )
+    assert create_response.status_code == 400, create_response.text
+
+
+def test_default_offers_returned_when_no_eligible_match(admin_client) -> None:
+    suffix = uuid4().hex[:8]
+    attr_required = create_attribute(admin_client, f"required_only_{suffix}")
+
+    create_default_response = admin_client.post(
+        "/v1/offers/",
+        json={
+            "name": f"Default Offer {suffix}",
+            "description": "fallback",
+            "price": 20.0,
+            "default": True,
+            "requires_all": [attr_required],
+            "requires_optional": [],
+            "excludes": [],
+            "priority": 7,
+        },
+    )
+    assert create_default_response.status_code == 201, create_default_response.text
+    assert create_default_response.json()["default"] is True
+
+    create_regular_response = admin_client.post(
+        "/v1/offers/",
+        json={
+            "name": f"Regular Offer {suffix}",
+            "description": "regular",
+            "price": 30.0,
+            "default": False,
+            "requires_all": [attr_required],
+            "requires_optional": [],
+            "excludes": [],
+            "priority": 9,
+        },
+    )
+    assert create_regular_response.status_code == 201, create_regular_response.text
+
+    selection_response = admin_client.post(
+        "/v1/offers/selection",
+        json={"attributes": []},
+    )
+    assert selection_response.status_code == 200, selection_response.text
+    body = selection_response.json()
+    names = [item["offer"]["name"] for item in body["items"]]
+    assert f"Default Offer {suffix}" in names
+    assert f"Regular Offer {suffix}" not in names
+    assert body["total_eligible"] == 0

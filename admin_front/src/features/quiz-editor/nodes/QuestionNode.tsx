@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -14,7 +16,9 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { useEditorStore } from '../store/editor.store'
-import { QUESTION_TYPES, USER_ATTRIBUTES } from '../constants'
+import { QUESTION_TYPES } from '../constants'
+import { AttributeBadge } from '../components/AttributeBadge'
+import { DroppableZone } from '../components/DroppableZone'
 import type { QuestionNodeData } from '../types'
 
 type Props = NodeProps & { data: QuestionNodeData }
@@ -28,6 +32,14 @@ export function QuestionNode({ id, data, selected }: Props) {
 
   const isChoiceType = data.questionType === 'single_choice' || data.questionType === 'multi_choice'
 
+  const handleRemoveAttribute = (answerId: string, attrId: number) => {
+    const answer = data.answers.find((a) => a.id === answerId)
+    if (!answer) return
+    updateAnswer(id, answerId, {
+      attributes: answer.attributes.filter((a) => a !== attrId),
+    })
+  }
+
   return (
     <div className={cn('w-[280px]', selected && 'ring-2 ring-primary rounded-lg')}>
       <Handle type="target" position={Position.Top} className="!bg-blue-500" />
@@ -37,14 +49,27 @@ export function QuestionNode({ id, data, selected }: Props) {
           <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
             Question
           </Badge>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="nodrag h-6 w-6 text-muted-foreground hover:text-destructive"
-            onClick={() => removeNode(id)}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="nodrag flex items-center gap-1">
+              <Switch
+                id={`requires-${id}`}
+                checked={data.requires}
+                onCheckedChange={(v) => updateNodeData(id, { requires: v })}
+                className="scale-75"
+              />
+              <Label htmlFor={`requires-${id}`} className="text-[10px] text-muted-foreground cursor-pointer">
+                Required
+              </Label>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="nodrag h-6 w-6 text-muted-foreground hover:text-destructive"
+              onClick={() => removeNode(id)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         </CardHeader>
 
         <CardContent className="space-y-2 px-3 pb-3">
@@ -55,39 +80,21 @@ export function QuestionNode({ id, data, selected }: Props) {
             onBlur={(e) => updateNodeData(id, { text: e.target.value })}
           />
 
-          <div className="grid grid-cols-2 gap-2">
-            <Select
-              value={data.questionType}
-              onValueChange={(v) => updateNodeData(id, { questionType: v as QuestionNodeData['questionType'] })}
-            >
-              <SelectTrigger className="nodrag nowheel h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {QUESTION_TYPES.map((qt) => (
-                  <SelectItem key={qt.value} value={qt.value}>
-                    {qt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={data.attribute}
-              onValueChange={(v) => updateNodeData(id, { attribute: v })}
-            >
-              <SelectTrigger className="nodrag nowheel h-8 text-xs">
-                <SelectValue placeholder="Attribute" />
-              </SelectTrigger>
-              <SelectContent>
-                {USER_ATTRIBUTES.map((attr) => (
-                  <SelectItem key={attr} value={attr}>
-                    {attr}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select
+            value={data.questionType}
+            onValueChange={(v) => updateNodeData(id, { questionType: v as QuestionNodeData['questionType'] })}
+          >
+            <SelectTrigger className="nodrag nowheel h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {QUESTION_TYPES.map((qt) => (
+                <SelectItem key={qt.value} value={qt.value}>
+                  {qt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {isChoiceType && (
             <div className="space-y-1.5">
@@ -95,28 +102,43 @@ export function QuestionNode({ id, data, selected }: Props) {
                 Answers
               </p>
               {data.answers.map((answer) => (
-                <div key={answer.id} className="group relative flex items-center gap-1 pr-3">
-                  <GripVertical className="h-3 w-3 shrink-0 text-muted-foreground/50" />
-                  <Input
-                    className="nodrag nowheel h-7 text-xs flex-1 min-w-0"
-                    defaultValue={answer.text}
-                    placeholder="Answer text"
-                    onBlur={(e) => updateAnswer(id, answer.id, { text: e.target.value })}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="nodrag h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-                    onClick={() => removeAnswer(id, answer.id)}
+                <div key={answer.id} className="space-y-1">
+                  <div className="group relative flex items-center gap-1 pr-3">
+                    <GripVertical className="h-3 w-3 shrink-0 text-muted-foreground/50" />
+                    <Input
+                      className="nodrag nowheel h-7 text-xs flex-1 min-w-0"
+                      defaultValue={answer.text}
+                      placeholder="Answer text"
+                      onBlur={(e) => updateAnswer(id, answer.id, { text: e.target.value })}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="nodrag h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                      onClick={() => removeAnswer(id, answer.id)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                    <Handle
+                      type="source"
+                      position={Position.Right}
+                      id={answer.id}
+                      className="!bg-blue-500 !w-2.5 !h-2.5"
+                    />
+                  </div>
+                  <DroppableZone
+                    id={`answer-drop-${id}-${answer.id}`}
+                    data={{ type: 'answer-attributes', nodeId: id, answerId: answer.id }}
+                    placeholder="Drop attributes"
                   >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                  <Handle
-                    type="source"
-                    position={Position.Right}
-                    id={answer.id}
-                    className="!bg-blue-500 !w-2.5 !h-2.5"
-                  />
+                    {answer.attributes.map((attrId) => (
+                      <AttributeBadge
+                        key={attrId}
+                        attributeId={attrId}
+                        onRemove={() => handleRemoveAttribute(answer.id, attrId)}
+                      />
+                    ))}
+                  </DroppableZone>
                 </div>
               ))}
               <Button

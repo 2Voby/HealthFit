@@ -1,10 +1,18 @@
+from datetime import UTC, datetime
+from uuid import uuid4
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src.api.deps import require_authority
 from src.models import (
+    Attribute,
     Flow,
     FlowHistory,
     FlowQuestion,
+    FlowSession,
+    FlowSessionAnswer,
+    FlowSessionAnswerSelection,
+    FlowSessionAttribute,
     FlowTransition,
     FlowTransitionAnswer,
     Question,
@@ -26,6 +34,16 @@ from src.schemas.flow import (
     FlowTransitionResponse,
     FlowsListResponse,
     FlowUpdateRequest,
+)
+from src.schemas.flow_session import (
+    FlowSessionAdvanceResponse,
+    FlowSessionAnswerResponse,
+    FlowSessionAttributeSource,
+    FlowSessionCreateRequest,
+    FlowSessionDerivedAttributeResponse,
+    FlowSessionNextRequest,
+    FlowSessionResponse,
+    FlowSessionStatus,
 )
 from src.schemas.question import QuestionAnswerResponse, QuestionResponse
 
@@ -118,6 +136,22 @@ async def resolve_answers_by_ids(answer_ids: list[int]) -> dict[int, QuestionAns
             detail=f"Unknown answer ids: {', '.join(map(str, missing_ids))}",
         )
     return answer_map
+
+
+async def resolve_attributes_by_ids(attribute_ids: list[int]) -> dict[int, Attribute]:
+    if not attribute_ids:
+        return {}
+
+    unique_ids = sorted(set(attribute_ids))
+    attributes = await Attribute.filter(id__in=unique_ids)
+    attribute_map = {attribute.id: attribute for attribute in attributes}
+    missing_ids = [attribute_id for attribute_id in unique_ids if attribute_id not in attribute_map]
+    if missing_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unknown attribute ids: {', '.join(map(str, missing_ids))}",
+        )
+    return attribute_map
 
 
 def normalize_unique_ids(ids: list[int]) -> list[int]:
@@ -433,6 +467,249 @@ async def to_flow_response(flow: Flow) -> FlowResponse:
         transitions=response_transitions,
         created_at=flow.created_at,
         updated_at=flow.updated_at,
+    )
+
+
+def flow_session_status_value(session_status: object) -> str:
+    if hasattr(session_status, "value"):
+        return str(getattr(session_status, "value"))
+    return str(session_status)
+
+
+def flow_session_attribute_source_value(source: object) -> str:
+    if hasattr(source, "value"):
+        return str(getattr(source, "value"))
+    return str(source)
+
+
+async def get_flow_session_or_404(session_id: str) -> FlowSession:
+    session = await FlowSession.get_or_none(public_id=session_id)
+    if session is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flow session not found")
+    return session
+
+
+async def to_flow_session_response(session: FlowSession) -> FlowSessionResponse:
+    current_question: Question | None = None
+    if session.current_question_id is not None:
+        current_question = await Question.get_or_none(id=session.current_question_id)
+
+    session_answers = await FlowSessionAnswer.filter(session=session).order_by("id")
+    session_answer_ids = [item.id for item in session_answers]
+    selection_rows = []
+    if session_answer_ids:
+        selection_rows = await FlowSessionAnswerSelection.filter(session_answer_id__in=session_answer_ids).order_by(
+            "session_answer_id",
+            "answer_id",
+        )
+    selections_map: dict[int, list[int]] = {}
+    for row in selection_rows:
+        selections_map.setdefault(row.session_answer_id, []).append(row.answer_id)
+
+    answer_responses: list[FlowSessionAnswerResponse] = []
+    for item in session_answers:
+        answer_responses.append(
+            FlowSessionAnswerResponse(
+                question_id=item.question_id,
+                selected_answer_ids=selections_map.get(item.id, []),
+                manual_input=item.manual_input,
+                created_at=item.created_at,
+                updated_at=item.updated_at,
+            )
+        )
+
+    derived_rows = await FlowSessionAttribute.filter(session=session).order_by("id")
+    derived_attributes: list[FlowSessionDerivedAttributeResponse] = []
+    for item in derived_rows:
+        derived_attributes.append(
+            FlowSessionDerivedAttributeResponse(
+                attribute_id=item.attribute_id,
+                source=flow_session_attribute_source_value(item.source),
+                question_id=item.question_id,
+                session_answer_id=item.session_answer_id,
+                created_at=item.created_at,
+                updated_at=item.updated_at,
+            )
+        )
+
+    context = session.context if isinstance(session.context, dict) else {}
+    return FlowSessionResponse(
+        id=session.public_id,
+        flow_id=session.flow_id,
+        status=flow_session_status_value(session.status),
+        current_question_id=session.current_question_id,
+        current_question=await to_question_response(current_question) if current_question is not None else None,
+        context=context,
+        answers=answer_responses,
+        derived_attributes=derived_attributes,
+        created_at=session.created_at,
+        updated_at=session.updated_at,
+        completed_at=session.completed_at,
+    )
+
+
+async def create_session_for_flow(flow: Flow, payload: FlowSessionCreateRequest | None) -> FlowSessionResponse:
+    first_flow_question = await FlowQuestion.filter(flow=flow).order_by("position").first()
+    start_question_id = first_flow_question.question_id if first_flow_question is not None else None
+    is_finished = start_question_id is None
+    context = payload.context if payload is not None else {}
+
+    session = await FlowSession.create(
+        public_id=uuid4().hex,
+        flow=flow,
+        status=FlowSessionStatus.completed.value if is_finished else FlowSessionStatus.in_progress.value,
+        current_question_id=start_question_id,
+        context=context,
+        completed_at=datetime.now(UTC) if is_finished else None,
+    )
+    return await to_flow_session_response(session)
+
+
+@router.post("/active/session", response_model=FlowSessionResponse, status_code=status.HTTP_201_CREATED)
+async def create_active_flow_session(payload: FlowSessionCreateRequest | None = None) -> FlowSessionResponse:
+    flow = await Flow.filter(is_active=True).first()
+    if flow is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Active flow not found")
+    return await create_session_for_flow(flow=flow, payload=payload)
+
+
+@router.post("/{flow_id}/session", response_model=FlowSessionResponse, status_code=status.HTTP_201_CREATED)
+async def create_flow_session(flow_id: int, payload: FlowSessionCreateRequest | None = None) -> FlowSessionResponse:
+    flow = await Flow.get_or_none(id=flow_id)
+    if flow is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flow not found")
+    return await create_session_for_flow(flow=flow, payload=payload)
+
+
+@router.get("/session/{session_id}", response_model=FlowSessionResponse)
+async def get_flow_session(session_id: str) -> FlowSessionResponse:
+    session = await get_flow_session_or_404(session_id)
+    return await to_flow_session_response(session)
+
+
+@router.post("/session/{session_id}/next", response_model=FlowSessionAdvanceResponse)
+async def resolve_flow_session_next(session_id: str, payload: FlowSessionNextRequest) -> FlowSessionAdvanceResponse:
+    session = await get_flow_session_or_404(session_id)
+    if flow_session_status_value(session.status) == FlowSessionStatus.completed.value:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Flow session is already completed")
+    if session.current_question_id is None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Flow session has no current question")
+
+    flow = await Flow.get_or_none(id=session.flow_id)
+    if flow is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flow not found")
+
+    current_question = await Question.get_or_none(id=session.current_question_id)
+    if current_question is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Current question not found")
+
+    current_question_type = question_type_value(current_question.type)
+    manual_input = payload.manual_input.strip() if payload.manual_input is not None else None
+    if current_question_type == "manual_input":
+        if current_question.requires and not manual_input:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="manual_input value is required for this question",
+            )
+    elif manual_input:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"manual_input is allowed only for manual_input questions, got {current_question_type}",
+        )
+    else:
+        manual_input = None
+
+    resolve_response = await resolve_next_for_flow(
+        flow=flow,
+        payload=FlowResolveNextRequest(
+            current_question_id=current_question.id,
+            selected_answer_ids=payload.selected_answer_ids,
+        ),
+    )
+
+    selected_answer_map = await resolve_answers_by_ids(resolve_response.selected_answer_ids)
+    session_answer = await FlowSessionAnswer.get_or_none(session=session, question=current_question)
+    if session_answer is None:
+        session_answer = await FlowSessionAnswer.create(
+            session=session,
+            question=current_question,
+            manual_input=manual_input,
+        )
+    else:
+        session_answer.manual_input = manual_input
+        await session_answer.save()
+        await FlowSessionAnswerSelection.filter(session_answer=session_answer).delete()
+
+    for selected_answer_id in resolve_response.selected_answer_ids:
+        await FlowSessionAnswerSelection.create(
+            session_answer=session_answer,
+            answer_id=selected_answer_id,
+        )
+
+    answer_attribute_ids: set[int] = set()
+    for answer in selected_answer_map.values():
+        answer_attributes = await answer.attributes.all()
+        answer_attribute_ids.update(attribute.id for attribute in answer_attributes)
+
+    manual_derived_attribute_ids = normalize_unique_ids(payload.derived_attribute_ids)
+    all_derived_attribute_ids = sorted(answer_attribute_ids | set(manual_derived_attribute_ids))
+    await resolve_attributes_by_ids(all_derived_attribute_ids)
+
+    for attribute_id in sorted(answer_attribute_ids):
+        existing_attribute = await FlowSessionAttribute.get_or_none(session=session, attribute_id=attribute_id)
+        if existing_attribute is None:
+            await FlowSessionAttribute.create(
+                session=session,
+                attribute_id=attribute_id,
+                source=FlowSessionAttributeSource.answer.value,
+                question=current_question,
+                session_answer=session_answer,
+            )
+        else:
+            existing_attribute.source = FlowSessionAttributeSource.answer.value
+            existing_attribute.question = current_question
+            existing_attribute.session_answer = session_answer
+            await existing_attribute.save()
+
+    for attribute_id in manual_derived_attribute_ids:
+        existing_attribute = await FlowSessionAttribute.get_or_none(session=session, attribute_id=attribute_id)
+        if existing_attribute is None:
+            await FlowSessionAttribute.create(
+                session=session,
+                attribute_id=attribute_id,
+                source=FlowSessionAttributeSource.manual_input.value,
+                question=current_question,
+                session_answer=session_answer,
+            )
+        else:
+            existing_attribute.source = FlowSessionAttributeSource.manual_input.value
+            existing_attribute.question = current_question
+            existing_attribute.session_answer = session_answer
+            await existing_attribute.save()
+
+    current_context = session.context if isinstance(session.context, dict) else {}
+    if payload.context_patch:
+        current_context = {**current_context, **payload.context_patch}
+    session.context = current_context
+
+    session.current_question_id = resolve_response.next_question_id
+    if resolve_response.is_finished:
+        session.status = FlowSessionStatus.completed.value
+        session.completed_at = datetime.now(UTC)
+    else:
+        session.status = FlowSessionStatus.in_progress.value
+    await session.save()
+
+    session_response = await to_flow_session_response(session)
+    return FlowSessionAdvanceResponse(
+        flow_id=flow.id,
+        session_id=session.public_id,
+        previous_question_id=current_question.id,
+        matched_transition_id=resolve_response.matched_transition_id,
+        next_question_id=resolve_response.next_question_id,
+        is_finished=resolve_response.is_finished,
+        next_question=resolve_response.next_question,
+        session=session_response,
     )
 
 

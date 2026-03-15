@@ -40,9 +40,9 @@ export function hasCycle(
 }
 
 const NODE_HEIGHT_MAP: Record<string, number> = {
-  question: 320,
+  question: 400,
   info_page: 200,
-  offer: 170,
+  offer: 350,
 }
 
 const NODE_WIDTH = 280

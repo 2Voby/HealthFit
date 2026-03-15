@@ -1,11 +1,10 @@
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import toast from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Card,
   CardContent,
@@ -14,61 +13,36 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { useAuthStore } from '@/store/auth.store'
-import { api } from '@/lib/api'
-import type { User } from '@/types'
-
-const registerSchema = z.object({
-  name: z.string().min(2, 'Мінімум 2 символи'),
-  email: z.email('Невірний формат email'),
-  password: z.string().min(6, 'Мінімум 6 символів'),
-  confirmPassword: z.string(),
-}).check(
-  (ctx) => {
-    if (ctx.value.password !== ctx.value.confirmPassword) {
-      ctx.issues.push({
-        input: ctx.value.confirmPassword,
-        code: 'custom',
-        message: 'Паролі не співпадають',
-        path: ['confirmPassword'],
-      })
-    }
-  }
-)
-
-type RegisterValues = z.infer<typeof registerSchema>
+import { useRegister } from '@/hooks/use-auth'
 
 export function RegisterPage() {
   const navigate = useNavigate()
-  const setUser = useAuthStore((s) => s.setUser)
-  const [error, setError] = useState<string | null>(null)
+  const registerMutation = useRegister()
+  const loginRef = useRef<HTMLInputElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
+  const confirmRef = useRef<HTMLInputElement>(null)
 
-  const form = useForm<RegisterValues>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: { name: '', email: '', password: '', confirmPassword: '' },
-  })
-
-  async function onSubmit(values: RegisterValues) {
-    setError(null)
-    try {
-      const user = await api.post<User>('/auth/register', {
-        name: values.name,
-        email: values.email,
-        password: values.password,
-      })
-      setUser(user)
-      navigate('/')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Помилка реєстрації')
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const login = loginRef.current?.value ?? ''
+    const password = passwordRef.current?.value ?? ''
+    const confirm = confirmRef.current?.value ?? ''
+    if (password !== confirm) {
+      toast.error('Passwords do not match')
+      return
     }
+    registerMutation.mutate(
+      { login, password },
+      {
+        onSuccess: () => {
+          toast.success('Registered! Please log in.')
+          navigate('/login')
+        },
+        onError: (err) => {
+          toast.error(err.message || 'Registration failed')
+        },
+      },
+    )
   }
 
   return (
@@ -79,66 +53,23 @@ export function RegisterPage() {
           <CardDescription>Створіть новий акаунт</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ім'я</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ваше ім'я" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="you@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Пароль</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="******" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Підтвердіть пароль</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="******" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Реєстрація...' : 'Зареєструватися'}
-              </Button>
-            </form>
-          </Form>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="login">Логін</Label>
+              <Input id="login" type="text" placeholder="your_login" ref={loginRef} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Пароль</Label>
+              <Input id="password" type="password" placeholder="******" ref={passwordRef} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Підтвердіть пароль</Label>
+              <Input id="confirmPassword" type="password" placeholder="******" ref={confirmRef} required />
+            </div>
+            <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
+              {registerMutation.isPending ? 'Реєстрація...' : 'Зареєструватися'}
+            </Button>
+          </form>
         </CardContent>
         <CardFooter className="justify-center">
           <p className="text-sm text-muted-foreground">
