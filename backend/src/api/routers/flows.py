@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+import re
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -72,6 +73,39 @@ def flow_history_action_value(action: object) -> str:
     if hasattr(action, "value"):
         return str(getattr(action, "value"))
     return str(action)
+
+
+def manual_input_matches_answer_text(answer_text: str, manual_input_value: int) -> bool:
+    normalized = answer_text.strip().replace("–", "-").replace("—", "-").replace(" ", "")
+    range_match = re.fullmatch(r"(\d+)-(\d+)", normalized)
+    if range_match is not None:
+        min_value = int(range_match.group(1))
+        max_value = int(range_match.group(2))
+        return min_value <= manual_input_value <= max_value
+
+    plus_match = re.fullmatch(r"(\d+)\+", normalized)
+    if plus_match is not None:
+        min_value = int(plus_match.group(1))
+        return manual_input_value >= min_value
+
+    return False
+
+
+async def resolve_manual_input_answer_ids(question: Question, manual_input: str | None) -> list[int]:
+    if manual_input is None:
+        return []
+
+    try:
+        manual_input_value = int(manual_input)
+    except ValueError:
+        return []
+
+    answers = await QuestionAnswer.filter(question=question).order_by("id")
+    return [
+        answer.id
+        for answer in answers
+        if manual_input_matches_answer_text(answer.text, manual_input_value)
+    ]
 
 
 async def to_question_response(question: Question) -> QuestionResponse:
@@ -666,7 +700,10 @@ async def resolve_flow_session_next(session_id: str, payload: FlowSessionNextReq
         ),
     )
 
-    selected_answer_map = await resolve_answers_by_ids(resolve_response.selected_answer_ids)
+    manual_input_answer_ids = await resolve_manual_input_answer_ids(current_question, manual_input)
+    effective_selected_answer_ids = normalize_unique_ids(resolve_response.selected_answer_ids + manual_input_answer_ids)
+
+    selected_answer_map = await resolve_answers_by_ids(effective_selected_answer_ids)
     session_answer = await FlowSessionAnswer.get_or_none(session=session, question=current_question)
     if session_answer is None:
         session_answer = await FlowSessionAnswer.create(
@@ -679,7 +716,7 @@ async def resolve_flow_session_next(session_id: str, payload: FlowSessionNextReq
         await session_answer.save()
         await FlowSessionAnswerSelection.filter(session_answer=session_answer).delete()
 
-    for selected_answer_id in resolve_response.selected_answer_ids:
+    for selected_answer_id in effective_selected_answer_ids:
         await FlowSessionAnswerSelection.create(
             session_answer=session_answer,
             answer_id=selected_answer_id,
