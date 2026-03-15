@@ -15,12 +15,14 @@ def create_question(
     question_type: str,
     requires: bool = False,
     answers: list[dict] | None = None,
+    manual_input: dict | None = None,
 ) -> dict:
     response = admin_client.post(
         "/v1/questions/",
         json={
             "text": text,
             "type": question_type,
+            "manual_input": manual_input,
             "requires": requires,
             "answers": answers or [],
         },
@@ -49,6 +51,7 @@ def test_flow_session_persists_context_answers_and_derived_attributes(admin_clie
         f"Manual {suffix}",
         "manual_input",
         requires=True,
+        manual_input={"type": "number", "min": 10, "max": 60},
     )
     q_text = create_question(
         admin_client,
@@ -127,7 +130,7 @@ def test_flow_session_persists_context_answers_and_derived_attributes(admin_clie
         f"/v1/flows/session/{session_id}/next",
         json={
             "selected_answer_ids": [],
-            "manual_input": "Можу тренуватись 20-30 хв",
+            "manual_input": "30",
             "derived_attribute_ids": [attr_manual],
         },
     )
@@ -138,7 +141,7 @@ def test_flow_session_persists_context_answers_and_derived_attributes(admin_clie
     assert session_after_manual_response.status_code == 200, session_after_manual_response.text
     session_after_manual = session_after_manual_response.json()
     manual_answer_item = next(item for item in session_after_manual["answers"] if item["question_id"] == q_manual["id"])
-    assert manual_answer_item["manual_input"] == "Можу тренуватись 20-30 хв"
+    assert manual_answer_item["manual_input"] == "30"
     manual_derived_item = next(
         item for item in session_after_manual["derived_attributes"] if item["attribute_id"] == attr_manual
     )
@@ -167,6 +170,7 @@ def test_flow_session_manual_input_required_validation(admin_client) -> None:
         f"Manual Required {suffix}",
         "manual_input",
         requires=True,
+        manual_input={"type": "number", "min": 18, "max": 99},
     )
 
     flow_response = admin_client.post(
@@ -197,3 +201,56 @@ def test_flow_session_manual_input_required_validation(admin_client) -> None:
         json={"selected_answer_ids": []},
     )
     assert next_response.status_code == 400, next_response.text
+
+
+def test_flow_session_manual_input_number_validation(admin_client) -> None:
+    suffix = uuid4().hex[:8]
+    q_manual = create_question(
+        admin_client,
+        f"Manual Number {suffix}",
+        "manual_input",
+        requires=True,
+        manual_input={"type": "number", "min": 150, "max": 220},
+    )
+
+    flow_response = admin_client.post(
+        "/v1/flows/",
+        json={
+            "name": f"Manual Number Flow {suffix}",
+            "is_active": True,
+            "question_ids": [q_manual["id"]],
+            "transitions": [
+                {
+                    "from_question_id": q_manual["id"],
+                    "to_question_id": None,
+                    "condition_type": "always",
+                    "answer_ids": [],
+                    "priority": 10,
+                }
+            ],
+        },
+    )
+    assert flow_response.status_code == 201, flow_response.text
+
+    create_session_response = admin_client.post("/v1/flows/active/session", json={})
+    assert create_session_response.status_code == 201, create_session_response.text
+    session_id = create_session_response.json()["id"]
+
+    non_numeric_response = admin_client.post(
+        f"/v1/flows/session/{session_id}/next",
+        json={"manual_input": "abc"},
+    )
+    assert non_numeric_response.status_code == 400, non_numeric_response.text
+
+    out_of_range_response = admin_client.post(
+        f"/v1/flows/session/{session_id}/next",
+        json={"manual_input": "149"},
+    )
+    assert out_of_range_response.status_code == 400, out_of_range_response.text
+
+    valid_response = admin_client.post(
+        f"/v1/flows/session/{session_id}/next",
+        json={"manual_input": "180"},
+    )
+    assert valid_response.status_code == 200, valid_response.text
+    assert valid_response.json()["is_finished"] is True

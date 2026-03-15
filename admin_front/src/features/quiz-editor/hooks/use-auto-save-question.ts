@@ -7,19 +7,26 @@ import type { QuestionUpdateRequest, QuestionAnswerCreateRequest } from '@/types
 const DEBOUNCE_MS = 800
 const pendingTimers = new Map<number, ReturnType<typeof setTimeout>>()
 
+function isChoiceType(questionType: string): boolean {
+  return questionType === 'single_choice' || questionType === 'multi_choice'
+}
+
 function saveQuestion(backendId: number) {
   const node = useEditorStore.getState().nodes.find(
     (n) => n.data.kind === 'question' && n.data.backendQuestionId === backendId,
   )
   if (!node || node.data.kind !== 'question') return
 
-  const answers: QuestionAnswerCreateRequest[] = node.data.answers.map((a) => ({
-    text: a.text,
-    attributes: a.attributes,
-  }))
+  const answers: QuestionAnswerCreateRequest[] = isChoiceType(node.data.questionType)
+    ? node.data.answers.map((a) => ({
+        text: a.text,
+        attributes: a.attributes,
+      }))
+    : []
   const update: QuestionUpdateRequest = {
     text: node.data.text,
     type: mapQuestionTypeToApi(node.data.questionType) as QuestionUpdateRequest['type'],
+    manual_input: node.data.questionType === 'input_number' ? node.data.manualInput ?? null : null,
     requires: node.data.requires,
     answers,
   }

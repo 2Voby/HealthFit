@@ -113,10 +113,16 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type: str,
         requires: bool,
         answers: list[tuple[str, list[str]]],
+        manual_input_type: str | None = None,
+        manual_input_min: int | None = None,
+        manual_input_max: int | None = None,
     ) -> tuple[Question, dict[str, QuestionAnswer]]:
         question = await Question.create(
             text=text,
             type=question_type,
+            manual_input_type=manual_input_type,
+            manual_input_min=manual_input_min,
+            manual_input_max=manual_input_max,
             requires=requires,
         )
         created_answers: dict[str, QuestionAnswer] = {}
@@ -138,16 +144,23 @@ async def bootstrap_mock_data(settings: Settings) -> None:
     )
     q2, _ = await create_question_with_answers(
         text="Ваш вік?",
-        question_type="singe_choise",
+        question_type="manual_input",
         requires=True,
-        answers=[
-            ("18–24", ["Вік 18-24"]),
-            ("25–34", ["Вік 25-34"]),
-            ("35–44", ["Вік 35-44"]),
-            ("45+", ["Вік 45+"]),
-        ],
+        answers=[],
+        manual_input_type="number",
+        manual_input_min=18,
+        manual_input_max=100,
     )
     q3, _ = await create_question_with_answers(
+        text="Ваш зріст (см)?",
+        question_type="manual_input",
+        requires=True,
+        answers=[],
+        manual_input_type="number",
+        manual_input_min=120,
+        manual_input_max=220,
+    )
+    q4, _ = await create_question_with_answers(
         text="Ваша стать?",
         question_type="singe_choise",
         requires=False,
@@ -157,7 +170,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Не вказувати", ["Стать: не вказано"]),
         ],
     )
-    q4, q4_answers = await create_question_with_answers(
+    q5, q5_answers = await create_question_with_answers(
         text="Де вам зручніше займатися?",
         question_type="singe_choise",
         requires=True,
@@ -167,7 +180,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("На вулиці", ["Локація: outdoors"]),
         ],
     )
-    q5, _ = await create_question_with_answers(
+    q6, _ = await create_question_with_answers(
         text="Яке обладнання у вас є вдома?",
         question_type="singe_choise",
         requires=False,
@@ -177,7 +190,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Повний сет", ["Обладнання вдома: повний набір"]),
         ],
     )
-    q6, _ = await create_question_with_answers(
+    q7, _ = await create_question_with_answers(
         text="Який у вас досвід тренувань у залі?",
         question_type="singe_choise",
         requires=False,
@@ -187,7 +200,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Просунутий рівень", ["Досвід у залі: просунутий"]),
         ],
     )
-    q7, _ = await create_question_with_answers(
+    q8, _ = await create_question_with_answers(
         text="Який outdoor формат вам ближчий?",
         question_type="singe_choise",
         requires=False,
@@ -197,7 +210,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Мікс активностей", ["Outdoor формат: мікс"]),
         ],
     )
-    q8, _ = await create_question_with_answers(
+    q9, _ = await create_question_with_answers(
         text="Скільки часу на день ви готові виділяти?",
         question_type="singe_choise",
         requires=True,
@@ -207,7 +220,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("30–45 хв", ["Час на тренування: 30-45 хв"]),
         ],
     )
-    q9, _ = await create_question_with_answers(
+    q10, _ = await create_question_with_answers(
         text="Яка ваша головна ціль?",
         question_type="singe_choise",
         requires=True,
@@ -219,7 +232,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Витривалість", ["Ціль: витривалість"]),
         ],
     )
-    q10, q10_answers = await create_question_with_answers(
+    q11, q11_answers = await create_question_with_answers(
         text="Чи є у вас травми або обмеження?",
         question_type="singe_choise",
         requires=True,
@@ -228,7 +241,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Ні, немає", ["Травми: ні"]),
         ],
     )
-    q11, _ = await create_question_with_answers(
+    q12, _ = await create_question_with_answers(
         text="Що саме турбує найбільше?",
         question_type="multiple_choise",
         requires=False,
@@ -238,7 +251,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Інше", ["Травма: інше", "Преференс: low-impact"]),
         ],
     )
-    q12, _ = await create_question_with_answers(
+    q13, _ = await create_question_with_answers(
         text="Ваш поточний рівень підготовки?",
         question_type="singe_choise",
         requires=True,
@@ -248,7 +261,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Advanced", ["Рівень: advanced"]),
         ],
     )
-    q13, _ = await create_question_with_answers(
+    q14, _ = await create_question_with_answers(
         text="Що найчастіше заважає тренуватися регулярно?",
         question_type="multiple_choise",
         requires=False,
@@ -259,7 +272,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Втома", ["Бар'єр: втома"]),
         ],
     )
-    q14, _ = await create_question_with_answers(
+    q15, _ = await create_question_with_answers(
         text="Який формат тренувань вам ближчий?",
         question_type="multiple_choise",
         requires=False,
@@ -272,7 +285,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Короткі сесії", ["Преференс: короткі сесії"]),
         ],
     )
-    q15, _ = await create_question_with_answers(
+    q16, _ = await create_question_with_answers(
         text="Яку інтенсивність ви хочете?",
         question_type="singe_choise",
         requires=False,
@@ -282,7 +295,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Високу", ["Інтенсивність: висока"]),
         ],
     )
-    q16, _ = await create_question_with_answers(
+    q17, _ = await create_question_with_answers(
         text="Скільки тренувань на тиждень вам реально підходить?",
         question_type="singe_choise",
         requires=False,
@@ -292,7 +305,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Щодня коротко", ["Графік: щодня", "Преференс: короткі сесії"]),
         ],
     )
-    q17, _ = await create_question_with_answers(
+    q18, _ = await create_question_with_answers(
         text="Ваш рівень стресу зараз?",
         question_type="singe_choise",
         requires=True,
@@ -302,7 +315,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Високий", ["Стрес: високий"]),
         ],
     )
-    q18, _ = await create_question_with_answers(
+    q19, _ = await create_question_with_answers(
         text="Як оцінюєте якість сну?",
         question_type="singe_choise",
         requires=False,
@@ -312,7 +325,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             ("Добре", ["Сон: добрий"]),
         ],
     )
-    q19, _ = await create_question_with_answers(
+    q20, _ = await create_question_with_answers(
         text="Ваш рівень енергії протягом дня?",
         question_type="singe_choise",
         requires=False,
@@ -410,7 +423,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         name="Yoga & Mobility (Home) — гнучкість + спина/постава",
         description="Digital: йога/мобільність 10–25 хв",
         wellness_kit_name="Mobility Kit",
-        wellness_kit_image_url="https://placehold.co/600x400?text=Mobility+Kit",
+        wellness_kit_image_url="https://store.betterme.world/uk/products/recovery-essential-kit?srsltid=AfmBOoq7PrNhNJ7B7HlFI4q6iJRmxAPCyfM2MnCoxVbCYyoh8J2VOBTf",
         wellness_kit_description="travel yoga mat або yoga strap, massage ball, mini foam roller",
         price=39.99,
         priority=82,
@@ -470,6 +483,7 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         q17,
         q18,
         q19,
+        q20,
     ]
     for position, question in enumerate(ordered_questions, start=1):
         await FlowQuestion.create(
@@ -478,11 +492,11 @@ async def bootstrap_mock_data(settings: Settings) -> None:
             position=position,
         )
 
-    loc_home_answer = q4_answers["Вдома"]
-    loc_gym_answer = q4_answers["У залі"]
-    loc_outdoor_answer = q4_answers["На вулиці"]
-    injuries_yes_answer = q10_answers["Так, є"]
-    injuries_no_answer = q10_answers["Ні, немає"]
+    loc_home_answer = q5_answers["Вдома"]
+    loc_gym_answer = q5_answers["У залі"]
+    loc_outdoor_answer = q5_answers["На вулиці"]
+    injuries_yes_answer = q11_answers["Так, є"]
+    injuries_no_answer = q11_answers["Ні, немає"]
 
     async def create_transition(
         from_question: Question,
@@ -504,27 +518,28 @@ async def bootstrap_mock_data(settings: Settings) -> None:
     await create_transition(q1, q2, "always", 10)
     await create_transition(q2, q3, "always", 10)
     await create_transition(q3, q4, "always", 10)
+    await create_transition(q4, q5, "always", 10)
 
-    await create_transition(q4, q5, "answer_any", 10, [loc_home_answer])
-    await create_transition(q4, q6, "answer_any", 20, [loc_gym_answer])
-    await create_transition(q4, q7, "answer_any", 30, [loc_outdoor_answer])
+    await create_transition(q5, q6, "answer_any", 10, [loc_home_answer])
+    await create_transition(q5, q7, "answer_any", 20, [loc_gym_answer])
+    await create_transition(q5, q8, "answer_any", 30, [loc_outdoor_answer])
 
-    await create_transition(q5, q8, "always", 10)
-    await create_transition(q6, q8, "always", 10)
-    await create_transition(q7, q8, "always", 10)
-
+    await create_transition(q6, q9, "always", 10)
+    await create_transition(q7, q9, "always", 10)
     await create_transition(q8, q9, "always", 10)
+
     await create_transition(q9, q10, "always", 10)
+    await create_transition(q10, q11, "always", 10)
 
-    await create_transition(q10, q11, "answer_any", 10, [injuries_yes_answer])
-    await create_transition(q10, q12, "answer_any", 20, [injuries_no_answer])
-    await create_transition(q11, q12, "always", 10)
-
+    await create_transition(q11, q12, "answer_any", 10, [injuries_yes_answer])
+    await create_transition(q11, q13, "answer_any", 20, [injuries_no_answer])
     await create_transition(q12, q13, "always", 10)
+
     await create_transition(q13, q14, "always", 10)
     await create_transition(q14, q15, "always", 10)
     await create_transition(q15, q16, "always", 10)
     await create_transition(q16, q17, "always", 10)
     await create_transition(q17, q18, "always", 10)
     await create_transition(q18, q19, "always", 10)
-    await create_transition(q19, None, "always", 10)
+    await create_transition(q19, q20, "always", 10)
+    await create_transition(q20, None, "always", 10)

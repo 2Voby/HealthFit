@@ -11,8 +11,8 @@ interface Props {
 }
 
 export function NumberChoiceBlock({ question, value, hasError, onChange }: Props) {
-  const min = 0;
-  const max = 999;
+  const min = question.manual_input?.min ?? 0;
+  const max = question.manual_input?.max ?? 999;
   const unit = "";
 
   return (

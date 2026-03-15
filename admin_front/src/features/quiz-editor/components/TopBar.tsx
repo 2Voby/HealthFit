@@ -191,6 +191,9 @@ export function TopBar() {
 
   const [isSaving, setIsSaving] = useState(false)
 
+  const getQuestionAnswers = (questionType: string, answers: { text: string; attributes: number[] }[]) =>
+    questionType === 'single_choice' || questionType === 'multi_choice' ? answers : []
+
   const handleSave = async () => {
     if (!activeFlowId) return
     setIsSaving(true)
@@ -201,8 +204,9 @@ export function TopBar() {
           const req: QuestionCreateRequest = {
             text: node.data.text || 'New question',
             type: mapQuestionTypeToApi(node.data.questionType) as QuestionCreateRequest['type'],
+            manual_input: node.data.questionType === 'input_number' ? node.data.manualInput ?? null : null,
             requires: node.data.requires,
-            answers: node.data.answers.map((a) => ({
+            answers: getQuestionAnswers(node.data.questionType, node.data.answers).map((a) => ({
               text: a.text,
               attributes: a.attributes,
             })),

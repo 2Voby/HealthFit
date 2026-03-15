@@ -45,7 +45,13 @@ from src.schemas.flow_session import (
     FlowSessionResponse,
     FlowSessionStatus,
 )
-from src.schemas.question import QuestionAnswerResponse, QuestionResponse
+from src.schemas.question import (
+    build_manual_input_config,
+    default_manual_input_config,
+    ManualInputType,
+    QuestionAnswerResponse,
+    QuestionResponse,
+)
 
 router = APIRouter(prefix="/flows", tags=["flows"])
 
@@ -83,10 +89,19 @@ async def to_question_response(question: Question) -> QuestionResponse:
             )
         )
 
+    manual_input = build_manual_input_config(
+        input_type=question.manual_input_type,
+        min_value=question.manual_input_min,
+        max_value=question.manual_input_max,
+    )
+    if manual_input is None and question_type_value(question.type) == "manual_input":
+        manual_input = default_manual_input_config()
+
     return QuestionResponse(
         id=question.id,
         text=question.text,
         type=question_type_value(question.type),
+        manual_input=manual_input,
         requires=question.requires,
         answers=response_answers,
         created_at=question.created_at,
@@ -604,6 +619,13 @@ async def resolve_flow_session_next(session_id: str, payload: FlowSessionNextReq
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Current question not found")
 
     current_question_type = question_type_value(current_question.type)
+    current_manual_input = build_manual_input_config(
+        input_type=current_question.manual_input_type,
+        min_value=current_question.manual_input_min,
+        max_value=current_question.manual_input_max,
+    )
+    if current_manual_input is None and current_question_type == "manual_input":
+        current_manual_input = default_manual_input_config()
     manual_input = payload.manual_input.strip() if payload.manual_input is not None else None
     if current_question_type == "manual_input":
         if current_question.requires and not manual_input:
@@ -611,6 +633,23 @@ async def resolve_flow_session_next(session_id: str, payload: FlowSessionNextReq
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="manual_input value is required for this question",
             )
+        if manual_input and current_manual_input is not None and current_manual_input.type == ManualInputType.number:
+            try:
+                manual_input_value = int(manual_input)
+            except ValueError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="manual_input must be a valid integer for this question",
+                ) from exc
+            if manual_input_value < current_manual_input.min or manual_input_value > current_manual_input.max:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        f"manual_input must be between {current_manual_input.min} "
+                        f"and {current_manual_input.max} for this question"
+                    ),
+                )
+            manual_input = str(manual_input_value)
     elif manual_input:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -54,14 +54,15 @@ export function flowToGraph(flow: FlowResponse): QuizGraph & { quizId: string; q
       id: nodeId,
       type: 'question' as const,
       position: { x: 0, y: 0 },
-      data: {
-        kind: 'question' as const,
-        text: fq.question.text,
-        questionType: mapQuestionType(fq.question.type),
-        requires: fq.question.requires,
-        answers,
-        backendQuestionId: fq.question_id,
-      },
+        data: {
+          kind: 'question' as const,
+          text: fq.question.text,
+          questionType: mapQuestionType(fq.question.type),
+          manualInput: fq.question.manual_input,
+          requires: fq.question.requires,
+          answers,
+          backendQuestionId: fq.question_id,
+        },
     }
   })
 

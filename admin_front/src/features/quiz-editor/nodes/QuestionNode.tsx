@@ -34,7 +34,9 @@ export function QuestionNode({ id, data, selected }: Props) {
   const debouncedSave = useDebouncedSaveQuestion()
 
   const isChoiceType = data.questionType === 'single_choice' || data.questionType === 'multi_choice'
+  const isNumberInputType = data.questionType === 'input_number'
   const backendId = data.backendQuestionId
+  const manualInput = data.manualInput ?? { type: 'number' as const, min: 0, max: 999 }
 
   const handleRemoveAttribute = (answerId: string, attrId: number) => {
     const answer = data.answers.find((a) => a.id === answerId)
@@ -102,7 +104,10 @@ export function QuestionNode({ id, data, selected }: Props) {
           <Select
             value={data.questionType}
             onValueChange={(v) => {
-              updateNodeData(id, { questionType: v as QuestionNodeData['questionType'] })
+              updateNodeData(id, {
+                questionType: v as QuestionNodeData['questionType'],
+                manualInput: v === 'input_number' ? manualInput : data.manualInput ?? null,
+              })
               flushSaveQuestion(backendId)
             }}
           >
@@ -117,6 +122,47 @@ export function QuestionNode({ id, data, selected }: Props) {
               ))}
             </SelectContent>
           </Select>
+
+          {isNumberInputType && (
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                className="nodrag nowheel h-8 text-xs"
+                type="number"
+                defaultValue={manualInput.min}
+                placeholder="Min"
+                onBlur={(e) => {
+                  const nextMin = Number.parseInt(e.target.value, 10)
+                  const resolvedMin = Number.isNaN(nextMin) ? manualInput.min : nextMin
+                  updateNodeData(id, {
+                    manualInput: {
+                      ...manualInput,
+                      min: resolvedMin,
+                      max: Math.max(resolvedMin, manualInput.max),
+                    },
+                  })
+                  flushSaveQuestion(backendId)
+                }}
+              />
+              <Input
+                className="nodrag nowheel h-8 text-xs"
+                type="number"
+                defaultValue={manualInput.max}
+                placeholder="Max"
+                onBlur={(e) => {
+                  const nextMax = Number.parseInt(e.target.value, 10)
+                  const resolvedMax = Number.isNaN(nextMax) ? manualInput.max : nextMax
+                  updateNodeData(id, {
+                    manualInput: {
+                      ...manualInput,
+                      min: Math.min(manualInput.min, resolvedMax),
+                      max: resolvedMax,
+                    },
+                  })
+                  flushSaveQuestion(backendId)
+                }}
+              />
+            </div>
+          )}
 
           {isChoiceType && (
             <div className="space-y-1.5">

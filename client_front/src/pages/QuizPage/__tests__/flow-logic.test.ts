@@ -25,6 +25,7 @@ function makeQuestion(overrides: Partial<Question> = {}): Question {
 		id: 1,
 		text: "Q",
 		type: "singe_choise",
+		manual_input: null,
 		requires: true,
 		answers: [],
 		created_at: "",
@@ -321,11 +322,11 @@ describe("isAnswered logic", () => {
 	});
 
 	it("required number input: a value is answered", () => {
-		expect(isAnswered("number_input", true, 75)).toBe(true);
+		expect(isAnswered("manual_input", true, 75)).toBe(true);
 	});
 
 	it("required number input: undefined is not answered", () => {
-		expect(isAnswered("number_input", true, undefined)).toBe(false);
+		expect(isAnswered("manual_input", true, undefined)).toBe(false);
 	});
 });
 
@@ -347,7 +348,7 @@ describe("flow question sorting", () => {
 			makeFlowQuestion(1, 1, { type: "singe_choise" }),
 			makeFlowQuestion(2, 2, { type: "text" }),
 			makeFlowQuestion(3, 3, { type: "multiple_choise" }),
-			makeFlowQuestion(4, 4, { type: "number_input" }),
+			makeFlowQuestion(4, 4, { type: "manual_input" }),
 			makeFlowQuestion(5, 5, { type: "text" }),
 		];
 		const totalSteps = questions.filter((q) => q.question.type !== "text").length;

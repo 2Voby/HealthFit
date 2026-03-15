@@ -175,12 +175,15 @@ export default function QuizPage() {
 									}}
 								/>
 							)}
-							{currentQ.type === "number_input" && (
+							{currentQ.type === "manual_input" && (
 								<NumberChoiceBlock
 									question={currentQ}
-									value={Number(answers[currentQ.id] ?? 0)}
+									value={typeof answers[currentQ.id] === "number" ? Number(answers[currentQ.id]) : (currentQ.manual_input?.min ?? 0)}
 									hasError={hasError}
-									onChange={(val) => setAnswers((a) => ({ ...a, [currentQ.id]: val }))}
+									onChange={(val) => {
+										setAnswers((a) => ({ ...a, [currentQ.id]: val }));
+										setInvalidQuestionId(null);
+									}}
 								/>
 							)}
 						</div>

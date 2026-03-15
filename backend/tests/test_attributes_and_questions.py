@@ -66,8 +66,37 @@ def test_questions_support_text_type_and_validate_answers(admin_client) -> None:
         json={
             "text": "Manual input question",
             "type": "manual_input",
+            "manual_input": {"type": "number", "min": 10, "max": 99},
             "requires": False,
             "answers": [{"text": "bad", "attributes": []}],
         },
     )
     assert manual_input_with_answers_response.status_code == 400, manual_input_with_answers_response.text
+
+    manual_input_question_response = admin_client.post(
+        "/v1/questions/",
+        json={
+            "text": "Ваш вік?",
+            "type": "manual_input",
+            "manual_input": {"type": "number", "min": 18, "max": 100},
+            "requires": True,
+            "answers": [],
+        },
+    )
+    assert manual_input_question_response.status_code == 201, manual_input_question_response.text
+    manual_question = manual_input_question_response.json()
+    assert manual_question["type"] == "manual_input"
+    assert manual_question["manual_input"] == {"type": "number", "min": 18, "max": 100}
+    assert manual_question["answers"] == []
+
+    invalid_manual_input_response = admin_client.post(
+        "/v1/questions/",
+        json={
+            "text": "Broken range",
+            "type": "manual_input",
+            "manual_input": {"type": "number", "min": 100, "max": 18},
+            "requires": True,
+            "answers": [],
+        },
+    )
+    assert invalid_manual_input_response.status_code == 422, invalid_manual_input_response.text

@@ -2,6 +2,12 @@ import type { Node, Edge, Viewport } from '@xyflow/react'
 
 export type QuestionType = 'single_choice' | 'multi_choice' | 'input_number' | 'input_text'
 
+export interface ManualInputConfig {
+  type: 'number'
+  min: number
+  max: number
+}
+
 export interface Answer {
   id: string
   text: string
@@ -14,6 +20,7 @@ export interface QuestionNodeData {
   kind: 'question'
   text: string
   questionType: QuestionType
+  manualInput?: ManualInputConfig | null
   requires: boolean
   answers: Answer[]
   backendQuestionId?: number

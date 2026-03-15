@@ -1,5 +1,5 @@
 // src/types/quiz.types.ts
-export type QuestionType = "singe_choise" | "multiple_choise" | "number_input";
+export type QuestionType = "singe_choise" | "multiple_choise" | "manual_input";
 
 export interface Answer {
   id: number;

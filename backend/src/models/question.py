@@ -11,10 +11,17 @@ class QuestionType(str, Enum):
     text = "text"
 
 
+class ManualInputType(str, Enum):
+    number = "number"
+
+
 class Question(Model):
     id = fields.IntField(pk=True)
     text = fields.TextField()
     type = fields.CharEnumField(QuestionType, max_length=32)
+    manual_input_type = fields.CharEnumField(ManualInputType, max_length=32, null=True)
+    manual_input_min = fields.IntField(null=True)
+    manual_input_max = fields.IntField(null=True)
     requires = fields.BooleanField(default=False)
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)

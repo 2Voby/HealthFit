@@ -41,6 +41,10 @@ from src.schemas.offer import (
     OfferUpdateRequest,
 )
 from src.schemas.question import (
+    build_manual_input_config,
+    default_manual_input_config,
+    ManualInputConfig,
+    ManualInputType,
     QuestionAnswerCreateRequest,
     QuestionAnswerResponse,
     QuestionCreateRequest,
@@ -79,6 +83,8 @@ __all__ = [
     "FlowsListResponse",
     "FlowUpdateRequest",
     "LoginRequest",
+    "ManualInputConfig",
+    "ManualInputType",
     "OfferCreateRequest",
     "OfferResponse",
     "OffersListResponse",
@@ -94,6 +100,8 @@ __all__ = [
     "QuestionType",
     "QuestionUpdateRequest",
     "RegisterRequest",
+    "build_manual_input_config",
+    "default_manual_input_config",
     "UserCreateRequest",
     "UserResponse",
     "UsersListResponse",

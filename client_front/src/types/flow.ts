@@ -1,5 +1,11 @@
 // src/types/flow.ts
-export type QuestionType = "singe_choise" | "multiple_choise" | "number_input" | 'text';
+export type QuestionType = "singe_choise" | "multiple_choise" | "manual_input" | "text";
+
+export interface ManualInputConfig {
+  type: "number";
+  min: number;
+  max: number;
+}
 
 export interface Answer {
   id: number;
@@ -13,6 +19,7 @@ export interface Question {
   id: number;
   text: string;
   type: QuestionType;
+  manual_input?: ManualInputConfig | null;
   requires: boolean;
   answers: Answer[];
   created_at: string;

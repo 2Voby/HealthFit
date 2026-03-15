@@ -4,6 +4,9 @@ from src.api.deps import require_authority
 from src.core.flow_history import create_flow_history_for_all_flows
 from src.models import Attribute, Question, QuestionAnswer, User
 from src.schemas.question import (
+    build_manual_input_config,
+    default_manual_input_config,
+    ManualInputConfig,
     QuestionAnswerCreateRequest,
     QuestionAnswerResponse,
     QuestionCreateRequest,
@@ -51,6 +54,40 @@ def validate_answers(question_type: object, answers: list[QuestionAnswerCreateRe
         )
 
 
+def get_question_manual_input(question: Question) -> ManualInputConfig | None:
+    config = build_manual_input_config(
+        input_type=question.manual_input_type,
+        min_value=question.manual_input_min,
+        max_value=question.manual_input_max,
+    )
+    if config is None and question_type_value(question.type) == QuestionType.manual_input.value:
+        return default_manual_input_config()
+    return config
+
+
+def resolve_manual_input_config(
+    *,
+    question_type: str,
+    payload_manual_input: ManualInputConfig | None,
+    existing_question: Question | None = None,
+) -> ManualInputConfig | None:
+    if question_type == QuestionType.manual_input.value:
+        if payload_manual_input is not None:
+            return payload_manual_input
+        if existing_question is not None:
+            existing_config = get_question_manual_input(existing_question)
+            if existing_config is not None:
+                return existing_config
+        return default_manual_input_config()
+
+    if payload_manual_input is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"manual_input config is allowed only for manual_input questions, got {question_type}",
+        )
+    return None
+
+
 async def replace_question_answers(
     question: Question,
     answers_payload: list[QuestionAnswerCreateRequest],
@@ -85,6 +122,7 @@ async def to_question_response(question: Question) -> QuestionResponse:
         id=question.id,
         text=question.text,
         type=question_type_value(question.type),
+        manual_input=get_question_manual_input(question),
         requires=question.requires,
         answers=response_answers,
         created_at=question.created_at,
@@ -127,9 +165,16 @@ async def create_question(
             detail="text question must have requires=false",
         )
 
+    manual_input = resolve_manual_input_config(
+        question_type=payload.type.value,
+        payload_manual_input=payload.manual_input,
+    )
     question = await Question.create(
         text=payload.text,
         type=payload.type.value,
+        manual_input_type=manual_input.type.value if manual_input is not None else None,
+        manual_input_min=manual_input.min if manual_input is not None else None,
+        manual_input_max=manual_input.max if manual_input is not None else None,
         requires=payload.requires,
     )
     await replace_question_answers(question, payload.answers)
@@ -150,6 +195,11 @@ async def update_question(
 
     effective_type = payload.type.value if payload.type is not None else question_type_value(question.type)
     effective_requires = payload.requires if payload.requires is not None else question.requires
+    effective_manual_input = resolve_manual_input_config(
+        question_type=effective_type,
+        payload_manual_input=payload.manual_input,
+        existing_question=question,
+    )
     should_replace_answers = payload.answers is not None
     answers_to_save = payload.answers if payload.answers is not None else []
 
@@ -168,6 +218,9 @@ async def update_question(
         question.text = payload.text
     if payload.type is not None:
         question.type = payload.type.value
+    question.manual_input_type = effective_manual_input.type.value if effective_manual_input is not None else None
+    question.manual_input_min = effective_manual_input.min if effective_manual_input is not None else None
+    question.manual_input_max = effective_manual_input.max if effective_manual_input is not None else None
     if payload.requires is not None:
         question.requires = payload.requires
 

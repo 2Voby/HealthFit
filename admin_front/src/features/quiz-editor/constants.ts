@@ -20,6 +20,7 @@ export const NODE_KINDS: NodeKindMeta[] = [
       kind: 'question',
       text: 'New question',
       questionType: 'single_choice',
+      manualInput: { type: 'number', min: 0, max: 999 },
       requires: false,
       answers: [
         { id: crypto.randomUUID(), text: 'Option 1', attributes: [] },
@@ -106,4 +107,3 @@ export function groupAttributes(attributes: AttributeResponse[]): Map<string, At
   }
   return groups
 }
-

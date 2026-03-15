@@ -119,6 +119,14 @@ export interface OfferSelectionResponse {
 // ─── Questions ──────────────────────────────────────────────
 export type QuestionType = 'singe_choise' | 'multiple_choise' | 'manual_input' | 'text'
 
+export type ManualInputType = 'number'
+
+export interface ManualInputConfig {
+  type: ManualInputType
+  min: number
+  max: number
+}
+
 export interface QuestionAnswerResponse {
   id: number
   text: string
@@ -131,6 +139,7 @@ export interface QuestionResponse {
   id: number
   text: string
   type: QuestionType
+  manual_input?: ManualInputConfig | null
   requires: boolean
   answers: QuestionAnswerResponse[]
   created_at: string
@@ -150,6 +159,7 @@ export interface QuestionAnswerCreateRequest {
 export interface QuestionCreateRequest {
   text: string
   type: QuestionType
+  manual_input?: ManualInputConfig | null
   requires?: boolean
   answers?: QuestionAnswerCreateRequest[]
 }
@@ -157,6 +167,7 @@ export interface QuestionCreateRequest {
 export interface QuestionUpdateRequest {
   text?: string | null
   type?: QuestionType | null
+  manual_input?: ManualInputConfig | null
   requires?: boolean | null
   answers?: QuestionAnswerCreateRequest[] | null
 }
