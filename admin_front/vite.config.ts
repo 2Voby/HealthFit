@@ -4,6 +4,7 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
+  envDir: '..',
   plugins: [react()],
   server: {
     allowedHosts: ['nonparasitically-unrestored-luz.ngrok-free.dev'],

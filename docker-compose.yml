@@ -5,14 +5,14 @@ services:
       dockerfile: Dockerfile
     container_name: users_api
     env_file:
-      - ./backend/.env
+      - ./.env
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     ports:
-      - "18247:8000"
+      - "${API_EXTERNAL_PORT:-18247}:8000"
     volumes:
       - ./backend/src:/app/src
     restart: unless-stopped
@@ -25,7 +25,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-app}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
     ports:
-      - "15429:5432"
+      - "${POSTGRES_EXTERNAL_PORT:-15429}:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -39,7 +39,7 @@ services:
     image: redis:7-alpine
     container_name: users_redis
     ports:
-      - "16371:6379"
+      - "${REDIS_EXTERNAL_PORT:-16371}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -54,13 +54,13 @@ services:
       context: ./admin_front
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://localhost:18247
-        VITE_WS_URL: ws://localhost:18247
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:18247}
+        VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:18247}
     container_name: users_admin_front
     depends_on:
       - api
     ports:
-      - "3000:80"
+      - "${ADMIN_FRONT_EXTERNAL_PORT:-3000}:80"
     restart: unless-stopped
 
   client_front:
@@ -68,13 +68,13 @@ services:
       context: ./client_front
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://localhost:18247
-        VITE_WS_URL: ws://localhost:18247
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:18247}
+        VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:18247}
     container_name: users_client_front
     depends_on:
       - api
     ports:
-      - "3001:80"
+      - "${CLIENT_FRONT_EXTERNAL_PORT:-3001}:80"
     restart: unless-stopped
 
   tests:
@@ -84,7 +84,7 @@ services:
     container_name: users_tests
     profiles: ["test"]
     env_file:
-      - ./backend/.env
+      - ./.env
     environment:
       BOOTSTRAP_MOCK_DATA: "false"
       PYTHONPATH: /app
@@ -109,7 +109,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-app}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
     ports:
-      - "15439:5432"
+      - "${POSTGRES_TEST_EXTERNAL_PORT:-15439}:5432"
     volumes:
       - pg_test_data:/var/lib/postgresql/data
     healthcheck:
@@ -124,7 +124,7 @@ services:
     container_name: users_redis_test
     profiles: ["test"]
     ports:
-      - "16381:6379"
+      - "${REDIS_TEST_EXTERNAL_PORT:-16381}:6379"
     volumes:
       - redis_test_data:/data
     healthcheck:
