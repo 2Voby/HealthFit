@@ -4,7 +4,6 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  envDir: '..',
   plugins: [react()],
   build: {
     // Avoid unsupported modern syntax (e.g. private class fields in dependencies)
