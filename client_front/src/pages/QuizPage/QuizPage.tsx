@@ -5,22 +5,21 @@ import { useNavigate } from "react-router-dom";
 import { QuizFooter } from "./components/QuizFooter";
 import { QuizHeader } from "./components/QuizHeader";
 import { getActiveFlow } from "@/api/requests";
-import type { Flow, FlowQuestion } from "@/types/flow";
-import { Info, Loader2 } from "lucide-react";
+import type { Flow } from "@/types/flow";
+import { Loader2, Sparkles } from "lucide-react";
 import { SingleChoiceBlock } from "./components/SingleChoiceBlock";
 import { MultiChoiceBlock } from "./components/MultiChoiceBlock";
 import { NumberChoiceBlock } from "./components/NumberChoiceBlock";
-import { Sparkles } from "lucide-react";
-import type { QuizAnswers, AnswerValue } from "@/types/flow";
-import { Button } from "@/components/ui/button";
 
 export default function QuizPage() {
 	const navigate = useNavigate();
 
 	const [flow, setFlow] = useState<Flow | null>(null);
-	const [stepIndex, setStepIndex] = useState(0);
-	const [answers, setAnswers] = useState<Record<number, number | number[]>>({});
 	const [loading, setLoading] = useState(true);
+	const [currentQuestionId, setCurrentQuestionId] = useState<number | null>(null);
+	const [history, setHistory] = useState<number[]>([]); // стек question_id для back
+	const [answers, setAnswers] = useState<Record<number, number | number[]>>({});
+	const [collectedAttributes, setCollectedAttributes] = useState<number[]>([]);
 	const [invalidQuestionId, setInvalidQuestionId] = useState<number | null>(null);
 
 	useEffect(() => {
@@ -31,6 +30,7 @@ export default function QuizPage() {
 				return;
 			}
 			setFlow(result.data);
+			setCurrentQuestionId(result.data.start_question_id);
 			setLoading(false);
 		}
 		load();
@@ -44,26 +44,63 @@ export default function QuizPage() {
 		);
 	}
 
-	if (!flow) return null;
+	if (!flow || currentQuestionId === null) return null;
 
-	const questions = [...flow.questions].sort((a, b) => a.position - b.position);
-	const totalSteps = questions.length;
-	const current = questions[stepIndex];
-	const currentQ = current.question;
+	const sortedQuestions = [...flow.questions].sort((a, b) => a.position - b.position);
+	const totalSteps = sortedQuestions.filter((q) => q.question.type !== "text").length;
+	const stepIndex = history.length;
+
+	const currentFlowQ = flow.questions.find((q) => q.question.id === currentQuestionId)!;
+	const currentQ = currentFlowQ.question;
+
 	const currentAnswer = answers[currentQ.id];
 	const isMulti = currentQ.type === "multiple_choise";
 	const isAnswered = isMulti ? Array.isArray(currentAnswer) && currentAnswer.length > 0 : currentAnswer !== undefined;
-	const canContinue = !currentQ.requires || isAnswered;
-	const isLastStep = stepIndex === totalSteps - 1;
+	const canContinue = currentQ.type === "text" || !currentQ.requires || isAnswered;
 	const hasError = invalidQuestionId === currentQ.id;
+
+	// знаходимо наступне питання через transitions
+	function resolveNextQuestionId(selectedAnswerIds: number[]): number | null {
+		const transitions = flow!.transitions
+			.filter((t) => t.from_question_id === currentQ.id)
+			.sort((a, b) => a.priority - b.priority);
+
+		for (const transition of transitions) {
+			if (transition.condition_type === "always") {
+				return transition.to_question_id; // може бути null — це кінець
+			}
+			if (transition.condition_type === "answer_any") {
+				const matches = transition.answer_ids.some((id) => selectedAnswerIds.includes(id));
+				if (matches) return transition.to_question_id;
+			}
+			if (transition.condition_type === "answer_all") {
+				const matches = transition.answer_ids.every((id) => selectedAnswerIds.includes(id));
+				if (matches) return transition.to_question_id;
+			}
+		}
+
+		return null; // немає transition — теж кінець
+	}
+
+	function getAnswerIds(): number[] {
+		const answer = answers[currentQ.id];
+		if (!answer) return [];
+		return Array.isArray(answer) ? answer : [answer];
+	}
+
+	function getAttributesForAnswerIds(answerIds: number[]): number[] {
+		return currentQ.answers.filter((a) => answerIds.includes(a.id)).flatMap((a) => a.attributes);
+	}
 
 	function handleBack() {
 		setInvalidQuestionId(null);
-		if (stepIndex === 0) {
+		if (history.length === 0) {
 			navigate(ROUTES.MAIN);
 			return;
 		}
-		setStepIndex((i) => i - 1);
+		const prev = history[history.length - 1];
+		setHistory((h) => h.slice(0, -1));
+		setCurrentQuestionId(prev);
 	}
 
 	function handleNext() {
@@ -73,12 +110,26 @@ export default function QuizPage() {
 			return;
 		}
 		setInvalidQuestionId(null);
-		if (isLastStep) {
-			navigate(ROUTES.RESULT);
+
+		const answerIds = getAnswerIds();
+		const newAttributes = getAttributesForAnswerIds(answerIds);
+		const updatedAttributes = [...collectedAttributes, ...newAttributes];
+		setCollectedAttributes(updatedAttributes);
+
+		const nextId = resolveNextQuestionId(answerIds);
+
+		if (nextId === null) {
+			navigate(ROUTES.RESULT, { state: { attributes: updatedAttributes } });
 			return;
 		}
-		setStepIndex((i) => i + 1);
+
+		if (currentQuestionId != null) {
+			setHistory((h) => [...h, currentQuestionId]);
+		}
+		setCurrentQuestionId(nextId);
 	}
+
+	const isLastStep = resolveNextQuestionId(getAnswerIds()) === null;
 
 	return (
 		<div className="min-h-screen bg-[#f4faf6] text-[#173325]">
@@ -92,15 +143,13 @@ export default function QuizPage() {
 						<div className="w-16 h-16 rounded-full bg-[#e6f4ec] flex items-center justify-center">
 							<Sparkles className="w-8 h-8 text-[#1a7a4a]" />
 						</div>
-						<div>
-							<h2 className="text-[22px] font-semibold text-[#173325] leading-snug">{currentQ.text}</h2>
-						</div>
+						<h2 className="text-[22px] font-semibold text-[#173325] leading-snug">{currentQ.text}</h2>
 					</div>
 				) : (
 					<>
 						<div className="mb-4">
 							<h1 className="text-[40px] font-semibold leading-[1.05] tracking-tight text-[#173325]">{currentQ.text}</h1>
-							{isMulti && <p className="text-[13px] text-[#547161] mt-1">Можна обрати кілька варіантів</p>}
+							{isMulti && <p className="text-[13px] text-[#547161] mt-3">Можна обрати кілька варіантів</p>}
 						</div>
 
 						<div className="flex flex-col gap-3">
@@ -142,7 +191,7 @@ export default function QuizPage() {
 			<QuizFooter
 				stepIndex={stepIndex}
 				totalSteps={totalSteps}
-				canContinue={currentQ.type === "text" ? true : canContinue}
+				canContinue={canContinue}
 				isLastStep={isLastStep}
 				onNext={handleNext}
 			/>
