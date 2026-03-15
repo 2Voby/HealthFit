@@ -40,73 +40,73 @@ async def bootstrap_mock_data(settings: Settings) -> None:
     if await Attribute.exists() or await Question.exists() or await Offer.exists() or await Flow.exists():
         return
 
-    attribute_names = {
-        "age:18_24": "Вік 18-24",
-        "age:25_34": "Вік 25-34",
-        "age:35_44": "Вік 35-44",
-        "age:45_plus": "Вік 45+",
-        "gender:female": "Стать: жінка",
-        "gender:male": "Стать: чоловік",
-        "gender:non_binary": "Стать: non-binary",
-        "gender:prefer_not_say": "Стать: не вказано",
-        "loc:home": "Локація: вдома",
-        "loc:gym": "Локація: зал",
-        "loc:outdoor": "Локація: outdoors",
-        "home_eq:none": "Обладнання вдома: немає",
-        "home_eq:basic": "Обладнання вдома: базове",
-        "home_eq:full": "Обладнання вдома: повний набір",
-        "gym_exp:new": "Досвід у залі: новачок",
-        "gym_exp:regular": "Досвід у залі: регулярний",
-        "gym_exp:advanced": "Досвід у залі: просунутий",
-        "outdoor:run": "Outdoor формат: біг",
-        "outdoor:walk": "Outdoor формат: ходьба",
-        "outdoor:mixed": "Outdoor формат: мікс",
-        "time:10_15": "Час на тренування: 10-15 хв",
-        "time:20_30": "Час на тренування: 20-30 хв",
-        "time:30_45": "Час на тренування: 30-45 хв",
-        "goal:weight_loss": "Ціль: схуднення",
-        "goal:strength": "Ціль: сила",
-        "goal:flexibility": "Ціль: гнучкість",
-        "goal:stress_relief": "Ціль: зниження стресу",
-        "goal:endurance": "Ціль: витривалість",
-        "injuries:yes": "Травми: так",
-        "injuries:no": "Травми: ні",
-        "injury:knee": "Травма: коліна",
-        "injury:back": "Травма: спина",
-        "injury:other": "Травма: інше",
-        "level:beginner": "Рівень: beginner",
-        "level:intermediate": "Рівень: intermediate",
-        "level:advanced": "Рівень: advanced",
-        "barrier:time": "Бар'єр: брак часу",
-        "barrier:stress": "Бар'єр: стрес",
-        "barrier:discipline": "Бар'єр: брак дисципліни",
-        "barrier:fatigue": "Бар'єр: втома",
-        "pref:strength": "Преференс: силові",
-        "pref:running": "Преференс: біг",
-        "pref:yoga": "Преференс: йога",
-        "pref:mobility": "Преференс: мобільність",
-        "pref:low_impact": "Преференс: low-impact",
-        "pref:short_sessions": "Преференс: короткі сесії",
-        "intensity:low": "Інтенсивність: низька",
-        "intensity:moderate": "Інтенсивність: середня",
-        "intensity:high": "Інтенсивність: висока",
-        "schedule:2_3": "Графік: 2-3 рази/тиждень",
-        "schedule:4_5": "Графік: 4-5 разів/тиждень",
-        "schedule:daily": "Графік: щодня",
-        "stress:low": "Стрес: низький",
-        "stress:medium": "Стрес: середній",
-        "stress:high": "Стрес: високий",
-        "sleep:poor": "Сон: поганий",
-        "sleep:ok": "Сон: нормальний",
-        "sleep:good": "Сон: добрий",
-        "energy:low": "Енергія: низька",
-        "energy:medium": "Енергія: середня",
-        "energy:high": "Енергія: висока",
-    }
+    attribute_names = [
+        "Вік 18-24",
+        "Вік 25-34",
+        "Вік 35-44",
+        "Вік 45+",
+        "Стать: жінка",
+        "Стать: чоловік",
+        "Стать: non-binary",
+        "Стать: не вказано",
+        "Локація: вдома",
+        "Локація: зал",
+        "Локація: outdoors",
+        "Обладнання вдома: немає",
+        "Обладнання вдома: базове",
+        "Обладнання вдома: повний набір",
+        "Досвід у залі: новачок",
+        "Досвід у залі: регулярний",
+        "Досвід у залі: просунутий",
+        "Outdoor формат: біг",
+        "Outdoor формат: ходьба",
+        "Outdoor формат: мікс",
+        "Час на тренування: 10-15 хв",
+        "Час на тренування: 20-30 хв",
+        "Час на тренування: 30-45 хв",
+        "Ціль: схуднення",
+        "Ціль: сила",
+        "Ціль: гнучкість",
+        "Ціль: зниження стресу",
+        "Ціль: витривалість",
+        "Травми: так",
+        "Травми: ні",
+        "Травма: коліна",
+        "Травма: спина",
+        "Травма: інше",
+        "Рівень: beginner",
+        "Рівень: intermediate",
+        "Рівень: advanced",
+        "Бар'єр: брак часу",
+        "Бар'єр: стрес",
+        "Бар'єр: брак дисципліни",
+        "Бар'єр: втома",
+        "Преференс: силові",
+        "Преференс: біг",
+        "Преференс: йога",
+        "Преференс: мобільність",
+        "Преференс: low-impact",
+        "Преференс: короткі сесії",
+        "Інтенсивність: низька",
+        "Інтенсивність: середня",
+        "Інтенсивність: висока",
+        "Графік: 2-3 рази/тиждень",
+        "Графік: 4-5 разів/тиждень",
+        "Графік: щодня",
+        "Стрес: низький",
+        "Стрес: середній",
+        "Стрес: високий",
+        "Сон: поганий",
+        "Сон: нормальний",
+        "Сон: добрий",
+        "Енергія: низька",
+        "Енергія: середня",
+        "Енергія: висока",
+    ]
     attributes_by_name: dict[str, Attribute] = {}
-    for attribute_key, attribute_display_name in attribute_names.items():
-        attribute = await Attribute.create(name=attribute_display_name)
-        attributes_by_name[attribute_key] = attribute
+    for attribute_name in attribute_names:
+        attribute = await Attribute.create(name=attribute_name)
+        attributes_by_name[attribute_name] = attribute
 
     async def create_question_with_answers(
         text: str,
@@ -141,10 +141,10 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="singe_choise",
         requires=True,
         answers=[
-            ("18–24", ["age:18_24"]),
-            ("25–34", ["age:25_34"]),
-            ("35–44", ["age:35_44"]),
-            ("45+", ["age:45_plus"]),
+            ("18–24", ["Вік 18-24"]),
+            ("25–34", ["Вік 25-34"]),
+            ("35–44", ["Вік 35-44"]),
+            ("45+", ["Вік 45+"]),
         ],
     )
     q3, _ = await create_question_with_answers(
@@ -152,10 +152,9 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="singe_choise",
         requires=False,
         answers=[
-            ("Жінка", ["gender:female"]),
-            ("Чоловік", ["gender:male"]),
-            ("Non-binary", ["gender:non_binary"]),
-            ("Не вказувати", ["gender:prefer_not_say"]),
+            ("Жінка", ["Стать: жінка"]),
+            ("Чоловік", ["Стать: чоловік"]),
+            ("Не вказувати", ["Стать: не вказано"]),
         ],
     )
     q4, q4_answers = await create_question_with_answers(
@@ -163,9 +162,9 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="singe_choise",
         requires=True,
         answers=[
-            ("Вдома", ["loc:home"]),
-            ("У залі", ["loc:gym"]),
-            ("На вулиці", ["loc:outdoor"]),
+            ("Вдома", ["Локація: вдома"]),
+            ("У залі", ["Локація: зал"]),
+            ("На вулиці", ["Локація: outdoors"]),
         ],
     )
     q5, _ = await create_question_with_answers(
@@ -173,9 +172,9 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="singe_choise",
         requires=False,
         answers=[
-            ("Немає", ["home_eq:none"]),
-            ("Базове (гантелі/резинки)", ["home_eq:basic"]),
-            ("Повний сет", ["home_eq:full"]),
+            ("Немає", ["Обладнання вдома: немає"]),
+            ("Базове (гантелі/резинки)", ["Обладнання вдома: базове"]),
+            ("Повний сет", ["Обладнання вдома: повний набір"]),
         ],
     )
     q6, _ = await create_question_with_answers(
@@ -183,9 +182,9 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="singe_choise",
         requires=False,
         answers=[
-            ("Новачок", ["gym_exp:new"]),
-            ("Тренуюсь регулярно", ["gym_exp:regular"]),
-            ("Просунутий рівень", ["gym_exp:advanced"]),
+            ("Новачок", ["Досвід у залі: новачок"]),
+            ("Тренуюсь регулярно", ["Досвід у залі: регулярний"]),
+            ("Просунутий рівень", ["Досвід у залі: просунутий"]),
         ],
     )
     q7, _ = await create_question_with_answers(
@@ -193,9 +192,9 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="singe_choise",
         requires=False,
         answers=[
-            ("Біг", ["outdoor:run", "pref:running"]),
-            ("Ходьба", ["outdoor:walk"]),
-            ("Мікс активностей", ["outdoor:mixed"]),
+            ("Біг", ["Outdoor формат: біг", "Преференс: біг"]),
+            ("Ходьба", ["Outdoor формат: ходьба"]),
+            ("Мікс активностей", ["Outdoor формат: мікс"]),
         ],
     )
     q8, _ = await create_question_with_answers(
@@ -203,9 +202,9 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="singe_choise",
         requires=True,
         answers=[
-            ("10–15 хв", ["time:10_15", "pref:short_sessions"]),
-            ("20–30 хв", ["time:20_30"]),
-            ("30–45 хв", ["time:30_45"]),
+            ("10–15 хв", ["Час на тренування: 10-15 хв", "Преференс: короткі сесії"]),
+            ("20–30 хв", ["Час на тренування: 20-30 хв"]),
+            ("30–45 хв", ["Час на тренування: 30-45 хв"]),
         ],
     )
     q9, _ = await create_question_with_answers(
@@ -213,11 +212,11 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="singe_choise",
         requires=True,
         answers=[
-            ("Схуднення", ["goal:weight_loss"]),
-            ("Сила", ["goal:strength", "pref:strength"]),
-            ("Гнучкість", ["goal:flexibility", "pref:yoga", "pref:mobility"]),
-            ("Зниження стресу", ["goal:stress_relief"]),
-            ("Витривалість", ["goal:endurance"]),
+            ("Схуднення", ["Ціль: схуднення"]),
+            ("Сила", ["Ціль: сила", "Преференс: силові"]),
+            ("Гнучкість", ["Ціль: гнучкість", "Преференс: йога", "Преференс: мобільність"]),
+            ("Зниження стресу", ["Ціль: зниження стресу"]),
+            ("Витривалість", ["Ціль: витривалість"]),
         ],
     )
     q10, q10_answers = await create_question_with_answers(
@@ -225,8 +224,8 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="singe_choise",
         requires=True,
         answers=[
-            ("Так, є", ["injuries:yes", "pref:low_impact"]),
-            ("Ні, немає", ["injuries:no"]),
+            ("Так, є", ["Травми: так", "Преференс: low-impact"]),
+            ("Ні, немає", ["Травми: ні"]),
         ],
     )
     q11, _ = await create_question_with_answers(
@@ -234,9 +233,9 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="multiple_choise",
         requires=False,
         answers=[
-            ("Коліна", ["injury:knee", "pref:low_impact"]),
-            ("Спина", ["injury:back", "pref:low_impact"]),
-            ("Інше", ["injury:other", "pref:low_impact"]),
+            ("Коліна", ["Травма: коліна", "Преференс: low-impact"]),
+            ("Спина", ["Травма: спина", "Преференс: low-impact"]),
+            ("Інше", ["Травма: інше", "Преференс: low-impact"]),
         ],
     )
     q12, _ = await create_question_with_answers(
@@ -244,9 +243,9 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="singe_choise",
         requires=True,
         answers=[
-            ("Beginner", ["level:beginner"]),
-            ("Intermediate", ["level:intermediate"]),
-            ("Advanced", ["level:advanced"]),
+            ("Beginner", ["Рівень: beginner"]),
+            ("Intermediate", ["Рівень: intermediate"]),
+            ("Advanced", ["Рівень: advanced"]),
         ],
     )
     q13, _ = await create_question_with_answers(
@@ -254,10 +253,10 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="multiple_choise",
         requires=False,
         answers=[
-            ("Брак часу", ["barrier:time"]),
-            ("Стрес", ["barrier:stress"]),
-            ("Брак дисципліни", ["barrier:discipline"]),
-            ("Втома", ["barrier:fatigue"]),
+            ("Брак часу", ["Бар'єр: брак часу"]),
+            ("Стрес", ["Бар'єр: стрес"]),
+            ("Брак дисципліни", ["Бар'єр: брак дисципліни"]),
+            ("Втома", ["Бар'єр: втома"]),
         ],
     )
     q14, _ = await create_question_with_answers(
@@ -265,12 +264,12 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="multiple_choise",
         requires=False,
         answers=[
-            ("Силові", ["pref:strength"]),
-            ("Біг", ["pref:running"]),
-            ("Йога", ["pref:yoga"]),
-            ("Мобільність/розтяжка", ["pref:mobility"]),
-            ("Low-impact", ["pref:low_impact"]),
-            ("Короткі сесії", ["pref:short_sessions"]),
+            ("Силові", ["Преференс: силові"]),
+            ("Біг", ["Преференс: біг"]),
+            ("Йога", ["Преференс: йога"]),
+            ("Мобільність/розтяжка", ["Преференс: мобільність"]),
+            ("Low-impact", ["Преференс: low-impact"]),
+            ("Короткі сесії", ["Преференс: короткі сесії"]),
         ],
     )
     q15, _ = await create_question_with_answers(
@@ -278,9 +277,9 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="singe_choise",
         requires=False,
         answers=[
-            ("Низьку", ["intensity:low"]),
-            ("Середню", ["intensity:moderate"]),
-            ("Високу", ["intensity:high"]),
+            ("Низьку", ["Інтенсивність: низька"]),
+            ("Середню", ["Інтенсивність: середня"]),
+            ("Високу", ["Інтенсивність: висока"]),
         ],
     )
     q16, _ = await create_question_with_answers(
@@ -288,9 +287,9 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="singe_choise",
         requires=False,
         answers=[
-            ("2–3", ["schedule:2_3"]),
-            ("4–5", ["schedule:4_5"]),
-            ("Щодня коротко", ["schedule:daily", "pref:short_sessions"]),
+            ("2–3", ["Графік: 2-3 рази/тиждень"]),
+            ("4–5", ["Графік: 4-5 разів/тиждень"]),
+            ("Щодня коротко", ["Графік: щодня", "Преференс: короткі сесії"]),
         ],
     )
     q17, _ = await create_question_with_answers(
@@ -298,9 +297,9 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="singe_choise",
         requires=True,
         answers=[
-            ("Низький", ["stress:low"]),
-            ("Середній", ["stress:medium"]),
-            ("Високий", ["stress:high"]),
+            ("Низький", ["Стрес: низький"]),
+            ("Середній", ["Стрес: середній"]),
+            ("Високий", ["Стрес: високий"]),
         ],
     )
     q18, _ = await create_question_with_answers(
@@ -308,9 +307,9 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="singe_choise",
         requires=False,
         answers=[
-            ("Погано", ["sleep:poor"]),
-            ("Нормально", ["sleep:ok"]),
-            ("Добре", ["sleep:good"]),
+            ("Погано", ["Сон: поганий"]),
+            ("Нормально", ["Сон: нормальний"]),
+            ("Добре", ["Сон: добрий"]),
         ],
     )
     q19, _ = await create_question_with_answers(
@@ -318,15 +317,18 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         question_type="singe_choise",
         requires=False,
         answers=[
-            ("Низький", ["energy:low"]),
-            ("Середній", ["energy:medium"]),
-            ("Високий", ["energy:high"]),
+            ("Низький", ["Енергія: низька"]),
+            ("Середній", ["Енергія: середня"]),
+            ("Високий", ["Енергія: висока"]),
         ],
     )
 
     async def create_offer(
         name: str,
         description: str,
+        wellness_kit_name: str,
+        wellness_kit_image_url: str,
+        wellness_kit_description: str,
         price: float,
         priority: int,
         default: bool,
@@ -337,6 +339,9 @@ async def bootstrap_mock_data(settings: Settings) -> None:
         offer = await Offer.create(
             name=name,
             description=description,
+            wellness_kit_name=wellness_kit_name,
+            wellness_kit_image_url=wellness_kit_image_url,
+            wellness_kit_description=wellness_kit_description,
             price=price,
             is_default=default,
             priority=priority,
@@ -351,100 +356,93 @@ async def bootstrap_mock_data(settings: Settings) -> None:
 
     await create_offer(
         name="Weight Loss Starter (Home) — 4 тижні",
-        description=(
-            "Digital: план схуднення вдома (20–30 хв)\n"
-            "Physical wellness kit: Home Fat-Burn Kit (resistance bands, скакалка, "
-            "шейкер/пляшка, електроліти + healthy snack)"
-        ),
+        description="Digital: план схуднення вдома (20–30 хв)",
+        wellness_kit_name="Home Fat-Burn Kit",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Home+Fat-Burn+Kit",
+        wellness_kit_description="resistance bands, скакалка, шейкер/пляшка, електроліти + healthy snack",
         price=49.99,
         priority=90,
         default=False,
-        requires_all=["goal:weight_loss", "loc:home", "time:20_30"],
-        requires_optional=["level:beginner", "pref:short_sessions"],
+        requires_all=["Ціль: схуднення", "Локація: вдома", "Час на тренування: 20-30 хв"],
+        requires_optional=["Рівень: beginner", "Преференс: короткі сесії"],
         excludes=[],
     )
     await create_offer(
         name="Lean Strength Builder (Gym) — силові + прогресія",
-        description=(
-            "Digital: програма для залу\n"
-            "Physical wellness kit: Gym Support Kit (wrist wraps/straps, mini loop band, "
-            "компактний рушник, електроліти/протеїн-снек)"
-        ),
+        description="Digital: програма для залу",
+        wellness_kit_name="Gym Support Kit",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Gym+Support+Kit",
+        wellness_kit_description="wrist wraps/straps, mini loop band, компактний рушник, електроліти/протеїн-снек",
         price=59.99,
         priority=88,
         default=False,
-        requires_all=["goal:strength", "loc:gym", "injuries:no"],
-        requires_optional=["level:intermediate", "level:advanced", "pref:strength"],
-        excludes=["injuries:yes"],
+        requires_all=["Ціль: сила", "Локація: зал", "Травми: ні"],
+        requires_optional=["Рівень: intermediate", "Рівень: advanced", "Преференс: силові"],
+        excludes=["Травми: так"],
     )
     await create_offer(
         name="Low-Impact Fat Burn — “суглоби friendly”",
-        description=(
-            "Digital: low-impact план (коліна/спина friendly)\n"
-            "Physical wellness kit: Joint-Friendly Kit (knee sleeve/бандаж, massage ball, "
-            "mini loop bands, cooling patch/recovery gel)"
-        ),
+        description="Digital: low-impact план (коліна/спина friendly)",
+        wellness_kit_name="Joint-Friendly Kit",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Joint-Friendly+Kit",
+        wellness_kit_description="knee sleeve/бандаж, massage ball, mini loop bands, cooling patch/recovery gel",
         price=54.99,
         priority=86,
         default=False,
-        requires_all=["goal:strength", "loc:gym", "injuries:yes"],
-        requires_optional=["pref:low_impact", "pref:mobility"],
+        requires_all=["Ціль: сила", "Локація: зал", "Травми: так"],
+        requires_optional=["Преференс: low-impact", "Преференс: мобільність"],
         excludes=[],
     )
     await create_offer(
         name="Run Your First 5K (Outdoor) — бігова програма",
-        description=(
-            "Digital: підготовка до 5K (3 рази/тиж)\n"
-            "Physical wellness kit: Runner Starter Kit (electrolytes, reflective armband/safety light, "
-            "blister kit, running belt)"
-        ),
+        description="Digital: підготовка до 5K (3 рази/тиж)",
+        wellness_kit_name="Runner Starter Kit",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Runner+Starter+Kit",
+        wellness_kit_description="electrolytes, reflective armband/safety light, blister kit, running belt",
         price=44.99,
         priority=84,
         default=False,
-        requires_all=["goal:endurance", "loc:outdoor", "injuries:no"],
-        requires_optional=["pref:running", "level:beginner"],
-        excludes=["injuries:yes"],
+        requires_all=["Ціль: витривалість", "Локація: outdoors", "Травми: ні"],
+        requires_optional=["Преференс: біг", "Рівень: beginner"],
+        excludes=["Травми: так"],
     )
     await create_offer(
         name="Yoga & Mobility (Home) — гнучкість + спина/постава",
-        description=(
-            "Digital: йога/мобільність 10–25 хв\n"
-            "Physical wellness kit: Mobility Kit (travel yoga mat або yoga strap, massage ball, "
-            "mini foam roller)"
-        ),
+        description="Digital: йога/мобільність 10–25 хв",
+        wellness_kit_name="Mobility Kit",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Mobility+Kit",
+        wellness_kit_description="travel yoga mat або yoga strap, massage ball, mini foam roller",
         price=39.99,
         priority=82,
         default=False,
-        requires_all=["goal:flexibility", "loc:home"],
-        requires_optional=["pref:yoga", "pref:mobility"],
+        requires_all=["Ціль: гнучкість", "Локація: вдома"],
+        requires_optional=["Преференс: йога", "Преференс: мобільність"],
         excludes=[],
     )
     await create_offer(
         name="Stress Reset Program — ментальний ресет + мікрозвички",
-        description=(
-            "Digital: дихання/медитації/антистрес рутини\n"
-            "Physical wellness kit: Calm-Now Kit (eye mask, aroma roll-on/mini candle, tea sticks, "
-            "stress ball/fidget, quick reset card)"
-        ),
+        description="Digital: дихання/медитації/антистрес рутини",
+        wellness_kit_name="Calm-Now Kit",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Calm-Now+Kit",
+        wellness_kit_description="eye mask, aroma roll-on/mini candle, tea sticks, stress ball/fidget, quick reset card",
         price=29.99,
         priority=70,
         default=True,
-        requires_all=["stress:high"],
-        requires_optional=["goal:stress_relief", "sleep:poor", "energy:low"],
+        requires_all=["Стрес: високий"],
+        requires_optional=["Ціль: зниження стресу", "Сон: поганий", "Енергія: низька"],
         excludes=[],
     )
     await create_offer(
         name="Quick Fit Micro-Workouts — 10–15 хв щодня",
-        description=(
-            "Digital: короткі щоденні тренування\n"
-            "Physical wellness kit: Micro-Workout Kit (slider discs, mini loop bands, "
-            "шейкер/пляшка, mini routine card)"
-        ),
+        description="Digital: короткі щоденні тренування",
+        wellness_kit_name="Micro-Workout Kit",
+        wellness_kit_image_url="https://placehold.co/600x400?text=Micro-Workout+Kit",
+        wellness_kit_description="slider discs, mini loop bands, шейкер/пляшка, mini routine card",
         price=34.99,
         priority=95,
         default=False,
-        requires_all=["goal:weight_loss", "loc:home", "time:10_15"],
-        requires_optional=["pref:short_sessions", "level:beginner"],
+        requires_all=["Ціль: схуднення", "Локація: вдома", "Час на тренування: 10-15 хв"],
+        requires_optional=["Преференс: короткі сесії", "Рівень: beginner"],
         excludes=[],
     )
 

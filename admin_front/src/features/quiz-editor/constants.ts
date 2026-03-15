@@ -1,6 +1,6 @@
 import { HelpCircle, FileText, Gift, type LucideIcon } from 'lucide-react'
 import type { NodeKind, QuizNodeData, QuestionType } from './types'
-import type { AttributeResponse, OfferResponse } from '@/types/api'
+import type { AttributeResponse } from '@/types/api'
 
 interface NodeKindMeta {
   kind: NodeKind
@@ -40,16 +40,11 @@ export const NODE_KINDS: NodeKindMeta[] = [
   },
   {
     kind: 'offer',
-    label: 'Offer',
+    label: 'Finish',
     icon: Gift,
     color: 'border-amber-500',
     defaultData: {
       kind: 'offer',
-      offerId: '',
-      label: 'New offer',
-      requires_all: [],
-      requires_optional: [],
-      excludes: [],
     },
   },
 ]
@@ -112,12 +107,3 @@ export function groupAttributes(attributes: AttributeResponse[]): Map<string, At
   return groups
 }
 
-export const MOCK_OFFERS: OfferResponse[] = [
-  { id: 1, name: 'Weight Loss Starter', description: '4-week home fat-burn plan (20-30 min)', price: 29.99, requires_all: [7], requires_optional: [1, 11], excludes: [], priority: 10, created_at: ts, updated_at: ts },
-  { id: 2, name: 'Lean Strength Builder', description: 'Gym strength + progression program', price: 39.99, requires_all: [8, 12], requires_optional: [15], excludes: [], priority: 8, created_at: ts, updated_at: ts },
-  { id: 3, name: 'Low-Impact Fat Burn', description: 'Joint-friendly plan (knees/back safe)', price: 24.99, requires_all: [7], requires_optional: [17], excludes: [], priority: 7, created_at: ts, updated_at: ts },
-  { id: 4, name: 'Run Your First 5K', description: 'Outdoor running program (3x/week)', price: 19.99, requires_all: [13], requires_optional: [14], excludes: [17], priority: 6, created_at: ts, updated_at: ts },
-  { id: 5, name: 'Yoga & Mobility', description: 'Flexibility + posture (10-25 min)', price: 22.99, requires_all: [], requires_optional: [9, 11], excludes: [], priority: 5, created_at: ts, updated_at: ts },
-  { id: 6, name: 'Stress Reset', description: 'Breathing, meditation & anti-stress routines', price: 17.99, requires_all: [10], requires_optional: [], excludes: [], priority: 4, created_at: ts, updated_at: ts },
-  { id: 7, name: 'Quick Fit Micro-Workouts', description: 'Daily 10-15 min workouts', price: 14.99, requires_all: [], requires_optional: [11, 14], excludes: [], priority: 3, created_at: ts, updated_at: ts },
-]

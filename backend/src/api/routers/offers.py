@@ -80,6 +80,9 @@ async def to_offer_response(offer: Offer) -> OfferResponse:
         id=offer.id,
         name=offer.name,
         description=offer.description,
+        wellness_kit_name=offer.wellness_kit_name,
+        wellness_kit_image_url=offer.wellness_kit_image_url,
+        wellness_kit_description=offer.wellness_kit_description,
         price=offer.price,
         default=offer.is_default,
         requires_all=requires_all_ids,
@@ -137,6 +140,9 @@ async def build_offer_selection_item(
         id=offer.id,
         name=offer.name,
         description=offer.description,
+        wellness_kit_name=offer.wellness_kit_name,
+        wellness_kit_image_url=offer.wellness_kit_image_url,
+        wellness_kit_description=offer.wellness_kit_description,
         price=offer.price,
         default=offer.is_default,
         requires_all=requires_all_ids,
@@ -187,6 +193,9 @@ async def build_default_offer_selection_item(
         id=offer.id,
         name=offer.name,
         description=offer.description,
+        wellness_kit_name=offer.wellness_kit_name,
+        wellness_kit_image_url=offer.wellness_kit_image_url,
+        wellness_kit_description=offer.wellness_kit_description,
         price=offer.price,
         default=offer.is_default,
         requires_all=requires_all_ids,
@@ -302,6 +311,9 @@ async def create_offer(
     offer = await Offer.create(
         name=payload.name,
         description=payload.description,
+        wellness_kit_name=payload.wellness_kit_name,
+        wellness_kit_image_url=payload.wellness_kit_image_url,
+        wellness_kit_description=payload.wellness_kit_description,
         price=payload.price,
         is_default=payload.default,
         priority=payload.priority,
@@ -339,6 +351,12 @@ async def update_offer(
 
     if payload.description is not None:
         offer.description = payload.description
+    if payload.wellness_kit_name is not None:
+        offer.wellness_kit_name = payload.wellness_kit_name
+    if payload.wellness_kit_image_url is not None:
+        offer.wellness_kit_image_url = payload.wellness_kit_image_url
+    if payload.wellness_kit_description is not None:
+        offer.wellness_kit_description = payload.wellness_kit_description
     if payload.price is not None:
         offer.price = payload.price
     if payload.default is not None:
